@@ -28,8 +28,43 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('astronaut_portrait', '/assets/sprites/astronaut_portrait.png');
     this.load.image('astronaut_idle', '/assets/sprites/astronaut_idle.png');
 
-    // Load realistic Mars menu backdrop if available
+    // Load realistic Mars menu backdrop and clean expansive terrain
     this.load.image('mars_menu_realistic', '/assets/renders/mars_menu_realistic.jpg');
+    this.load.image('gale_base_map', '/assets/renders/gale_base.png');
+    this.load.image('mars_outpost_base', '/assets/renders/mars_outpost_base.png');
+    this.load.image('mars_gale_crater_clean', '/assets/renders/mars_gale_crater_clean.png');
+    this.load.image('mars_gale_crater_expanded', '/assets/renders/mars_gale_crater_expanded.png');
+    this.load.spritesheet('astronaut_iso', '/assets/sprites/astronaut_isometric_sheet.png', {
+      frameWidth: 64,
+      frameHeight: 96
+    });
+
+    // Load High-Res Transparent Modular Outpost Structures & Equipment
+    this.load.image('outpost_dome', '/assets/outpost/dome_greenhouse.png');
+    this.load.image('outpost_hab', '/assets/outpost/hab_central.png');
+    this.load.image('outpost_science', '/assets/outpost/science_lab.png');
+    this.load.image('outpost_tower', '/assets/outpost/comms_tower.png');
+    this.load.image('outpost_hangar', '/assets/outpost/rover_hangar.png');
+    this.load.image('outpost_rocket', '/assets/outpost/rocket_lander.png');
+    this.load.image('outpost_dish', '/assets/outpost/relay_dish.png');
+    this.load.image('outpost_solar', '/assets/outpost/solar_array.png');
+    this.load.image('outpost_medbay', '/assets/outpost/med_bay.png');
+    this.load.image('outpost_rover', '/assets/outpost/rover_vehicle.png');
+    this.load.image('outpost_crates', '/assets/outpost/supply_crates.png');
+    this.load.image('outpost_fuel', '/assets/outpost/fuel_canisters.png');
+    this.load.image('outpost_truck', '/assets/outpost/heavy_truck.png');
+    this.load.image('outpost_powerbox', '/assets/outpost/power_box.png');
+    this.load.image('outpost_butte', '/assets/outpost/rock_butte.png');
+    this.load.image('outpost_rockmtn', '/assets/outpost/rock_mountain.png');
+    this.load.image('outpost_ice', '/assets/outpost/ice_crystals.png');
+
+    // Load individual components from assets2
+    for (const r of ['q1', 'q2', 'q3', 'q4']) {
+      for (let c = 1; c <= 7; c++) {
+        const key = `${r}_${c.toString().padStart(3, '0')}`;
+        this.load.image(`tile_${key}`, `/assets/assets2/${key}.png`);
+      }
+    }
 
     // Only load Blender 3D scene renders that genuinely exist in /public/assets/renders/
     const existingRenders = import.meta.glob('/public/assets/renders/*.{png,jpg,jpeg,webp}', { eager: true });
@@ -88,7 +123,51 @@ export class PreloadScene extends Phaser.Scene {
     });
 
     this.load.on('complete', () => {
-      // Register Astronaut animations globally
+      // Register 4-way Isometric & Cardinal Astronaut animations
+      if (this.textures.exists('astronaut_iso')) {
+        if (!this.anims.exists('astro_walk_down')) {
+          this.anims.create({
+            key: 'astro_walk_down',
+            frames: this.anims.generateFrameNumbers('astronaut_iso', { start: 0, end: 3 }),
+            frameRate: 8,
+            repeat: -1
+          });
+        }
+        if (!this.anims.exists('astro_walk_up')) {
+          this.anims.create({
+            key: 'astro_walk_up',
+            frames: this.anims.generateFrameNumbers('astronaut_iso', { start: 4, end: 7 }),
+            frameRate: 8,
+            repeat: -1
+          });
+        }
+        if (!this.anims.exists('astro_walk_right')) {
+          this.anims.create({
+            key: 'astro_walk_right',
+            frames: this.anims.generateFrameNumbers('astronaut_iso', { start: 8, end: 11 }),
+            frameRate: 8,
+            repeat: -1
+          });
+        }
+        if (!this.anims.exists('astro_walk_left')) {
+          this.anims.create({
+            key: 'astro_walk_left',
+            frames: this.anims.generateFrameNumbers('astronaut_iso', { start: 12, end: 15 }),
+            frameRate: 8,
+            repeat: -1
+          });
+        }
+        if (!this.anims.exists('astro_idle')) {
+          this.anims.create({
+            key: 'astro_idle',
+            frames: this.anims.generateFrameNumbers('astronaut_iso', { start: 16, end: 19 }),
+            frameRate: 4,
+            repeat: -1
+          });
+        }
+      }
+
+      // Legacy fallback animations
       if (this.textures.exists('astronaut_walk')) {
         if (!this.anims.exists('astro_walk_anim')) {
           this.anims.create({

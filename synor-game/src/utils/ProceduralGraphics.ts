@@ -363,5 +363,119 @@ export class ProceduralGraphics {
     scene.textures.addCanvas(key, canvas);
     return key;
   }
+
+  /**
+   * Generates a rich, textured top-down Mars ground terrain
+   * with soil noise, impact craters, basalt rocks, and rocket landing scorch marks.
+   */
+  public static generateMarsGroundTerrain(scene: Phaser.Scene, key = 'mars_ground_terrain', width = 2400, height = 1600): string {
+    if (scene.textures.exists(key)) return key;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return key;
+
+    // Base Martian iron oxide gradient
+    const grad = ctx.createLinearGradient(0, 0, width, height);
+    grad.addColorStop(0, '#933a17');
+    grad.addColorStop(0.5, '#ab441d');
+    grad.addColorStop(1, '#853012');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle soil texture noise
+    for (let i = 0; i < 1800; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      const s = Math.random() * 3 + 1;
+      const c = Math.random() < 0.5 ? 'rgba(70, 20, 8, 0.4)' : 'rgba(230, 110, 50, 0.25)';
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, s, s);
+    }
+
+    // Impact craters with rim highlights
+    for (let c = 0; c < 35; c++) {
+      const cx = (Math.sin(c * 17.3) * 0.5 + 0.5) * width;
+      const cy = (Math.cos(c * 13.7) * 0.5 + 0.5) * height;
+      const r = 15 + (c % 8) * 12;
+
+      // Dark shadow depression
+      const cg = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.2, 0, cx, cy, r);
+      cg.addColorStop(0, 'rgba(40, 12, 5, 0.85)');
+      cg.addColorStop(0.8, 'rgba(65, 22, 10, 0.5)');
+      cg.addColorStop(1, 'transparent');
+      ctx.fillStyle = cg;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sunlit rim arc
+      ctx.strokeStyle = 'rgba(255, 140, 70, 0.4)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI * 0.8, Math.PI * 1.8);
+      ctx.stroke();
+    }
+
+    // Scattered Martian basalt rocks
+    for (let r = 0; r < 120; r++) {
+      const rx = (Math.sin(r * 5.1) * 0.5 + 0.5) * width;
+      const ry = (Math.cos(r * 3.9) * 0.5 + 0.5) * height;
+      const size = 3 + (r % 5) * 2;
+      ctx.fillStyle = 'rgba(45, 15, 8, 0.8)';
+      ctx.beginPath();
+      ctx.arc(rx, ry, size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(240, 140, 90, 0.35)';
+      ctx.beginPath();
+      ctx.arc(rx - 1, ry - 1, size * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Rocket Lander Touchdown Zone (scorch marks & landing pad)
+    const landX = 420;
+    const landY = 820;
+
+    // Thruster burn blast ring
+    const burnGrad = ctx.createRadialGradient(landX, landY, 20, landX, landY, 180);
+    burnGrad.addColorStop(0, 'rgba(20, 8, 5, 0.95)');
+    burnGrad.addColorStop(0.4, 'rgba(45, 15, 8, 0.7)');
+    burnGrad.addColorStop(0.8, 'rgba(90, 30, 15, 0.3)');
+    burnGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = burnGrad;
+    ctx.beginPath();
+    ctx.arc(landX, landY, 180, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Radial thruster plume streaks
+    ctx.strokeStyle = 'rgba(25, 8, 4, 0.6)';
+    ctx.lineWidth = 3;
+    for (let a = 0; a < 16; a++) {
+      const angle = (a / 16) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(landX + Math.cos(angle) * 30, landY + Math.sin(angle) * 30);
+      ctx.lineTo(landX + Math.cos(angle) * 160, landY + Math.sin(angle) * 160);
+      ctx.stroke();
+    }
+
+    // Landing footprint pads
+    ctx.fillStyle = '#475569';
+    for (let p = 0; p < 4; p++) {
+      const pa = (p / 4) * Math.PI * 2 + Math.PI / 4;
+      const px = landX + Math.cos(pa) * 65;
+      const py = landY + Math.sin(pa) * 65;
+      ctx.beginPath();
+      ctx.arc(px, py, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    scene.textures.addCanvas(key, canvas);
+    return key;
+  }
 }
 

@@ -1,0 +1,303 @@
+{
+  "conjunctionDays": [
+    {
+      "day": 1,
+      "title": "Day 1 — Silence",
+      "summary": "The Sun moves directly between Earth and Mars. Coronal plasma blinds high-gain signals. Radio static replaces Houston's voice.",
+      "event": "Communication blackout initiated. Set initial habitat power profile.",
+      "choices": [
+        {
+          "text": "Standard Operations Profile",
+          "detail": "Maintain normal internal lighting and background sensors.",
+          "powerDelta": -10,
+          "co2Delta": 50,
+          "stressDelta": 0
+        },
+        {
+          "text": "Immediate Conservation Mode",
+          "detail": "Dim non-essential modules and throttle life-support buffer.",
+          "powerDelta": 10,
+          "co2Delta": 150,
+          "stressDelta": 5
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Day 2 — The Dust Front",
+      "summary": "A massive regional dust storm envelops Jezero Crater. Atmospheric opacity tau rises to 3.8. Solar array output collapses by 65%.",
+      "event": "Solar generation deficit. Power bus at negative net flow.",
+      "choices": [
+        {
+          "text": "Perform High-Risk Dust Storm EVA",
+          "detail": "Suit up and deploy electrostatic brush to scrub photovoltaic panels. (High suit O2/battery cost + radiation exposure)",
+          "evaRequired": true,
+          "o2Cost": 15,
+          "radiationDose": 12,
+          "powerDelta": 25,
+          "damageRisk": 10
+        },
+        {
+          "text": "Switch to Compact Fission Auxiliary",
+          "detail": "Fire up the Kilopower fission reserve. Conserves EVA suit life, but consumes reactor thermal isotopes.",
+          "powerDelta": 15,
+          "thermalDelta": 10,
+          "o2Cost": 0
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Day 3 — Energy Crisis",
+      "summary": "Primary storage battery bank cells experience thermal drop to -52°C. Power bus requires aggressive circuit shedding.",
+      "event": "Sub-zero battery throttling. Select load shedding priority.",
+      "choices": [
+        {
+          "text": "Cut Greenhouse & Auxiliary Heaters",
+          "detail": "Preserves core life support and cryo-freezer. Food hydroponics take a hit.",
+          "foodDelta": -15,
+          "powerDelta": 18,
+          "thermalDelta": -12
+        },
+        {
+          "text": "Throttle Sample Preservation Cryo-Unit",
+          "detail": "Directs all heat to crew quarters. Jezero core samples warm slightly, endangering fragile organic chains.",
+          "sciencePreservedDelta": -20,
+          "powerDelta": 20,
+          "thermalDelta": 8
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Day 4 — Air Quality Warning",
+      "summary": "CO2 amine scrubber bed differential pressure alarms. Cabin CO2 spikes to 2,800 ppm. Headache and cognitive slowing set in.",
+      "event": "ECLSS scrubber bed saturation.",
+      "choices": [
+        {
+          "text": "Install Sole Spare Scrubber Cartridge",
+          "detail": "Guaranteed fix down to 500 ppm, but exhausts your only factory replacement.",
+          "co2Delta": -2200,
+          "sparesRemaining": 0
+        },
+        {
+          "text": "Attempt Manual Baking & Desorption",
+          "detail": "Use thermal loop to regenerate fouled resin. Consumes 25 kWh power, partial recovery.",
+          "co2Delta": -1200,
+          "powerDelta": -15,
+          "sparesRemaining": 1
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Day 5 — Water Shortage",
+      "summary": "Graywater vacuum distillation centrifuge seals fail. Brackish brine leaks into filtration loop.",
+      "event": "Water recycling stoppage. 60% daily loss rate without intervention.",
+      "choices": [
+        {
+          "text": "Deploy Arcadia Nanofiltration Membrane",
+          "detail": "Utilize synthesized perchlorate-resistant membranes from Act II research.",
+          "requiresArcadiaData": true,
+          "waterDelta": 25,
+          "waterPurified": true
+        },
+        {
+          "text": "Strict Emergency Rationing",
+          "detail": "Halt hygiene loops and cut consumption to 1.2L per sol. Strains astronaut health.",
+          "waterDelta": -10,
+          "stressDelta": 15
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Day 6 — Radiation Alert",
+      "summary": "Satellite magnetometer detects Coronal Mass Ejection shockwave heading toward Mars. Surface radiation alert Level 3.",
+      "event": "Solar Particle Event (SPE) incoming within 4 hours.",
+      "choices": [
+        {
+          "text": "Retreat into Storm Shelter Behind Water Bladders",
+          "detail": "Cram into central bunker shielded by habitat water tanks. Halts all activities for 24 hours.",
+          "radiationDose": 8,
+          "shelterEffectiveness": "Optimal",
+          "cabinMaintenance": "Suspended"
+        },
+        {
+          "text": "Reinforce Exterior Berm with Excavator EVA",
+          "detail": "Rush to heap fresh Martian regolith against hab hull. Absorbs more SPE energy but exposes explorer outside.",
+          "evaRequired": true,
+          "radiationDose": 35,
+          "shelterProtection": 20,
+          "o2Cost": 20
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Day 7 — Halfway Point",
+      "summary": "Seven days in the dark. Storm winds howl at 120 km/h against the habitat composite hull. Cabin systems groaning under fatigue.",
+      "event": "Mid-point system audit and psychological stamina check.",
+      "choices": [
+        {
+          "text": "Perform Full Preventive Maintenance Sweep",
+          "detail": "Inspect every conduit, valve, and wiring harness. High calorie expenditure.",
+          "foodDelta": -10,
+          "systemHealth": 15,
+          "powerDelta": -8
+        },
+        {
+          "text": "Enter Torpor / Sleep Protocol",
+          "detail": "Rest for 14 hours to minimize metabolic O2 and food usage.",
+          "o2Cost": -5,
+          "foodDelta": -4,
+          "stressDelta": -10
+        }
+      ]
+    },
+    {
+      "day": 8,
+      "title": "Day 8 — Mechanical Failure",
+      "summary": "Exterior diagnostic camera confirms the stranded LREV chassis wheel hub has cracked from subzero thermal contraction.",
+      "event": "Rover return to Gale is permanently impossible. Parts must be salvaged.",
+      "choices": [
+        {
+          "text": "Strip Rover Lithium-Sulfur Batteries for Hab",
+          "detail": "Braving the exterior cold to haul rover cells inside. Adds +35% permanent battery capacity to the shelter.",
+          "evaRequired": true,
+          "powerCapacity": 35,
+          "o2Cost": 18,
+          "chassisIntact": false
+        },
+        {
+          "text": "Preserve Rover Chassis as Pressurized Refuge",
+          "detail": "Leave LREV intact as secondary emergency airlock backup in case hab ruptures.",
+          "chassisIntact": true,
+          "secondaryShelter": true
+        }
+      ]
+    },
+    {
+      "day": 9,
+      "title": "Day 9 — Emergency Supply Cache",
+      "summary": "Automated orbital tracking detects the pre-positioned autonomous cargo pod parachute signature 400m east of the habitat.",
+      "event": "Cargo drop confirmed in boulder field.",
+      "choices": [
+        {
+          "text": "Mount Boulder Field Retrieval EVA",
+          "detail": "Navigate zero-visibility dust storm to retrieve emergency O2 cylinders and filtration seals.",
+          "evaRequired": true,
+          "o2Gain": 30,
+          "waterGain": 20,
+          "foodGain": 25,
+          "radiationDose": 15
+        },
+        {
+          "text": "Await Storm Subsidence",
+          "detail": "Do not risk EVA in near-zero visibility. Cargo remains untouched.",
+          "cargoRetrieved": false
+        }
+      ]
+    },
+    {
+      "day": 10,
+      "title": "Day 10 — The Last Battery",
+      "summary": "Habitat primary capacitor bank shorts due to fine electrostatic dust infiltration. Power drops to emergency baseline.",
+      "event": "Severe power deficit. Direct fission link required.",
+      "choices": [
+        {
+          "text": "Re-route Kilopower Fission Directly to ECLSS",
+          "detail": "Focuses all power strictly into Life Support and Heating. Cryo-freezer must run at bare minimum.",
+          "powerDelta": 10,
+          "lifeSupportStable": true,
+          "cryoTempC": -18
+        },
+        {
+          "text": "Balance 50/50 Between Hab and Cryo-Freezer",
+          "detail": "Sacrifices cabin heat (drops to 4°C) to keep sample temperatures at -70°C.",
+          "thermalDelta": -25,
+          "cryoTempC": -70,
+          "stressDelta": 15
+        }
+      ]
+    },
+    {
+      "day": 11,
+      "title": "Day 11 — The Autonomous Supply Rover",
+      "summary": "An unmanned NASA exploration crawler programmed prior to conjunction arrives at the habitat airlock bearing heavy spares.",
+      "event": "Spare parts delivered to airlock vestibule.",
+      "choices": [
+        {
+          "text": "Restore Habitat Full Pressure Volume",
+          "detail": "Use new seals to re-pressurize the science lab and airlocks.",
+          "habitatVolume": "Full",
+          "airReserve": 20,
+          "powerDelta": -10
+        },
+        {
+          "text": "Consolidate into Compact Emergency Living Module",
+          "detail": "Keep outer bulkheads sealed off. Low power and heating footprint for the remainder of the mission.",
+          "habitatVolume": "Compact",
+          "powerDelta": 15,
+          "thermalDelta": 12
+        }
+      ]
+    },
+    {
+      "day": 12,
+      "title": "Day 12 — The Final Check",
+      "summary": "Atmospheric pressure begins gradual recovery. Dust opacity falls from 3.8 to 1.9. Solar panels start generating weak morning current.",
+      "event": "Prepare scientific data package for upcoming burst transmission.",
+      "choices": [
+        {
+          "text": "Deep Lossless Compression & Redundancy Checksum",
+          "detail": "Encodes all Arcadia polygonal scans, isotope profiles, and Jezero astrobiology mass-spec spectra.",
+          "dataPackageReady": true,
+          "scienceIntegrity": "100%",
+          "powerDelta": -12
+        },
+        {
+          "text": "Fast Streamlined Telemetry Package",
+          "detail": "Focuses solely on habitat survival telemetry and crew medical logs.",
+          "dataPackageReady": true,
+          "scienceIntegrity": "Standard"
+        }
+      ]
+    },
+    {
+      "day": 13,
+      "title": "Day 13 — Waiting",
+      "summary": "The Martian sky clears from blood orange to dusty amber. The roar of the wind drops to a faint whistle against the airlock.",
+      "event": "Last sol of full silence. Mental discipline and system check.",
+      "choices": [
+        {
+          "text": "Quiet Vigil & System Recalibration",
+          "detail": "Verify alignment coords for Deep Space Network (DSN) Madrid, Goldstone, and Canberra stations.",
+          "dsnLocked": true,
+          "stressDelta": -15
+        },
+        {
+          "text": "Perform Post-Storm EVA Inspection",
+          "detail": "Walk the perimeter to inspect foundation pilings and antenna array.",
+          "evaRequired": true,
+          "o2Cost": 10,
+          "radiationDose": 6,
+          "dsnLocked": true
+        }
+      ]
+    },
+    {
+      "day": 14,
+      "title": "Day 14 — The Signal",
+      "summary": "Mars emerges from behind the solar disk. Plasma diffraction falls below carrier threshold. The high-gain antenna light flickers from amber to solid green.",
+      "event": "CARRIER LOCK ACQUIRED. Deep Space Network incoming signal.",
+      "choices": [
+        {
+          "text": "Transmit Full Mission & Survival Archive to Earth",
+          "detail": "Stream all telemetry, survival records, and astrobiology sample telemetry to Houston.",
+          "endingTrigger": true
+        }
+      ]
+    }
+  ]
+}

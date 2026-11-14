@@ -1,0 +1,72 @@
+{
+  "chapters": [
+    {
+      "id": "act_1_prologue",
+      "title": "ACT I: PROLOGUE — GALE CRATER COMMISSIONING",
+      "subtitle": "Aeolis Mons Footprint, Mars (5.4°S, 137.8°E)",
+      "targetSite": "Gale Crater",
+      "commSource": "HOUSTON FLIGHT DYNAMICS (CAPCOM)",
+      "transmission": "SYNOR-1, this is Capcom. Telemetry confirms your pre-deployed cargo hab and ECLSS modules arrived intact at the base of Mount Sharp. Before long-range traversing, you must commission all life-support, power arrays, and radiation shielding nodes. Proceed with EVA protocol.",
+      "objectives": [
+        "Seal interior bulkheads and verify habitat atmospheric integrity",
+        "Coupling photovoltaic field arrays to main battery storage bank",
+        "Prime O2 water electrolysis stack and CO2 amine scrubbers",
+        "Initialize closed-loop graywater distillation and hydro-loop",
+        "Command automated regolith berm deposition over emergency storm bunker",
+        "Calibrate high-gain dish for Earth uplink synchronization"
+      ]
+    },
+    {
+      "id": "act_2_arcadia",
+      "title": "ACT II: THE ICE BENEATH — ARCADIA PLANITIA",
+      "subtitle": "Polygonal Cryo-Terrain (46.7°N, 168.0°W) — 4,180 km Traverse",
+      "targetSite": "Arcadia Planitia",
+      "commSource": "MARS SCIENCE LABORATORY ADVISORY",
+      "transmission": "Orbital neutron data from Mars Odyssey indicates substantial subsurface hydrogen deposits across Arcadia's polygonal patterned grounds. Your objective is to quantify ice depth, purity, and ISRU extractability using the LREV robotic suite. Remember: Martian ice is not pure water—watch for perchlorate contaminants.",
+      "objectives": [
+        "Conduct 6x6 subsurface scan using Ground-Penetrating Radar & Spectrometers",
+        "Core drill through patterned regolith to extract stratified ice cores",
+        "Process sample via Mars Regolith Extraction Unit (MREU) thermal chamber",
+        "Determine structural soil bearing capacity for future human landing pads"
+      ]
+    },
+    {
+      "id": "act_3_gale_return",
+      "title": "ACT III: RETURN TO GALE CRATER — UPGRADE & RE-OUTFIT",
+      "subtitle": "Gale Crater Base — Ingesting Arcadia Telemetry",
+      "commSource": "DIRECTORATE OF SURFACE MOBILITY",
+      "transmission": "Spectacular work in Arcadia, SYNOR-1. The perchlorate salt profile you identified has enabled automated synthesis of improved ion-exchange filtration membranes. Overhaul the LREV suspension, inspect the drive motors, and load consumables for the primary science sortie to Jezero Crater.",
+      "objectives": [
+        "Upload Arcadia water dataset to synthesize advanced filtration membranes",
+        "Overhaul LREV suspension coils and high-efficiency drive motors",
+        "Pack long-duration life-support consumables (O2 bottles, CO2 scrubbers, radiation shielding)"
+      ]
+    },
+    {
+      "id": "act_4_jezero",
+      "title": "ACT IV: THE ANCIENT LAKE — JEZERO CRATER",
+      "subtitle": "River Delta Outcrop (18.38°N, 77.58°E) — 3,790 km Traverse",
+      "commSource": "ASTROBIOLOGY CONSORTIUM",
+      "transmission": "You have arrived at Jezero Delta. Three billion years ago, a massive river breached this rim and laid down fine clay sediments capable of preserving organic biosignatures. Collect high-resolution spectrometry, extract pristine core samples, and establish the regional climate station.",
+      "objectives": [
+        "Laser-scan delta strata and sedimentary fluvial layers",
+        "Analyze outcrop mineralogy using Raman and XRF spectrometers",
+        "Screen fine mudstones for biosignature candidates & store in sealed cryo-tubes",
+        "Deploy automated meteorology and dust monitoring station"
+      ]
+    },
+    {
+      "id": "act_5_conjunction",
+      "title": "ACT V: THE 14-DAY SOLAR CONJUNCTION — THE SILENCE",
+      "subtitle": "Jezero Field Shelter — Earth Uplink Interrupted",
+      "commSource": "MISSION CONTROL (FINAL PRE-BLACKOUT TRANSMISSION)",
+      "transmission": "Mars is entering solar conjunction behind the sun. Coronal plasma will blind radio uplinks for the next fourteen days. You are alone, SYNOR-1. Manage power, guard your life-support, balance the sample cryo-freezer, and survive.",
+      "objectives": [
+        "Survive 14 Martian sols under zero Earth communications",
+        "Balance power load bus during violent regional dust storms",
+        "Maintain cabin O2, CO2 levels below 3,000 ppm, and minimize radiation dose",
+        "Safeguard precious Jezero astrobiology cores against cryogenic failure"
+      ]
+    }
+  ]
+}

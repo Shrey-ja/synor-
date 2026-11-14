@@ -1,0 +1,59 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #050608;
+  font-family: 'Rajdhani', sans-serif;
+  color: #e0e8f0;
+}
+
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+canvas {
+  display: block;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+/* Diegetic Scanlines & Vignette overlay */
+#dom-ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 10;
+  background: radial-gradient(circle at center, transparent 65%, rgba(4, 5, 8, 0.75) 100%),
+    repeating-linear-gradient(rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0.08) 3px, rgba(0, 0, 0, 0.08) 4px);
+}
+
+/* Modal and interactive styling if DOM is used */
+.mission-log-box {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: #38bdf8;
+  background: rgba(10, 15, 24, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.1);
+  padding: 12px;
+  border-radius: 4px;
+}

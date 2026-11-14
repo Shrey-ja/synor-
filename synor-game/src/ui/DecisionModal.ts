@@ -1,0 +1,162 @@
+/**
+ * Sci-Fi Trade-Off Decision Modal
+ * Renders immediate and delayed risks, resource impacts, and branching choices.
+ */
+
+import Phaser from 'phaser';
+import { soundFx } from '../utils/ProceduralAudio';
+
+export interface DecisionChoice {
+  text: string;
+  detail: string;
+  consequences?: string[];
+  powerDelta?: number;
+  o2Cost?: number;
+  radiationDose?: number;
+  thermalDelta?: number;
+  foodDelta?: number;
+  waterDelta?: number;
+  onSelect: () => void;
+}
+
+export interface DecisionData {
+  title: string;
+  summary: string;
+  hazardLevel?: 'NOMINAL' | 'ELEVATED' | 'CRITICAL' | 'CANON EVENT';
+  choices: DecisionChoice[];
+}
+
+export class DecisionModal extends Phaser.GameObjects.Container {
+  constructor(scene: Phaser.Scene, data: DecisionData) {
+    super(scene, 960, 540);
+    this.createModal(data);
+    scene.add.existing(this);
+    this.setDepth(300);
+  }
+
+  private createModal(data: DecisionData) {
+    soundFx.playAlarmTone();
+
+    // Dark backdrop blocker
+    const blocker = this.scene.add.rectangle(0, 0, 1920, 1080, 0x000000, 0.8)
+      .setInteractive()
+      .setOrigin(0.5);
+    this.add(blocker);
+
+    // Modal frame
+    const frameWidth = 840;
+    const frameHeight = 540;
+    const panel = this.scene.add.rectangle(0, 0, frameWidth, frameHeight, 0x070b14, 0.96)
+      .setStrokeStyle(2, data.hazardLevel === 'CRITICAL' ? 0xef4444 : 0x38bdf8, 0.9)
+      .setOrigin(0.5);
+    this.add(panel);
+
+    // Hazard Banner
+    const hazardColor = data.hazardLevel === 'CRITICAL' ? '#ef4444' : '#38bdf8';
+    const banner = this.scene.add.text(0, -220, `[MISSION ADVISORY: ${data.hazardLevel || 'DECISION REQUIRED'}]`, {
+      fontFamily: 'Share Tech Mono, monospace',
+      fontSize: '13px',
+      color: hazardColor,
+      letterSpacing: 2
+    }).setOrigin(0.5);
+    this.add(banner);
+
+    // Title
+    const title = this.scene.add.text(0, -185, data.title, {
+      fontFamily: 'Orbitron, sans-serif',
+      fontSize: '22px',
+      color: '#f8fafc',
+      align: 'center'
+    }).setOrigin(0.5);
+    this.add(title);
+
+    // Summary Box
+    const summaryBox = this.scene.add.text(0, -120, data.summary, {
+      fontFamily: 'Rajdhani, sans-serif',
+      fontSize: '16px',
+      color: '#cbd5e1',
+      align: 'center',
+      wordWrap: { width: 720 }
+    }).setOrigin(0.5);
+    this.add(summaryBox);
+
+    // Render Choice Cards
+    const numChoices = data.choices.length;
+    const cardWidth = Math.min(360, (760 - (numChoices - 1) * 20) / numChoices);
+    const startX = -((numChoices - 1) * (cardWidth + 20)) / 2;
+
+    data.choices.forEach((choice, index) => {
+      const cx = startX + index * (cardWidth + 20);
+      const cy = 60;
+      const cardHeight = 220;
+
+      const cardBg = this.scene.add.rectangle(cx, cy, cardWidth, cardHeight, 0x0f172a, 0.9)
+        .setStrokeStyle(1, 0x475569)
+        .setInteractive({ useHandCursor: true });
+
+      const choiceTitle = this.scene.add.text(cx, cy - 80, choice.text, {
+        fontFamily: 'Orbitron, sans-serif',
+        fontSize: '14px',
+        color: '#38bdf8',
+        align: 'center',
+        wordWrap: { width: cardWidth - 24 }
+      }).setOrigin(0.5);
+
+      const choiceDetail = this.scene.add.text(cx, cy - 20, choice.detail, {
+        fontFamily: 'Rajdhani, sans-serif',
+        fontSize: '13px',
+        color: '#94a3b8',
+        align: 'center',
+        wordWrap: { width: cardWidth - 24 }
+      }).setOrigin(0.5);
+
+      // Consequence metrics
+      let metricStr = '';
+      if (choice.powerDelta) metricStr += `Power: ${choice.powerDelta > 0 ? '+' : ''}${choice.powerDelta}%  `;
+      if (choice.o2Cost) metricStr += `O2 Cost: -${choice.o2Cost}%  `;
+      if (choice.radiationDose) metricStr += `Rad: +${choice.radiationDose}mSv  `;
+      if (choice.thermalDelta) metricStr += `Thermal: ${choice.thermalDelta > 0 ? '+' : ''}${choice.thermalDelta}%  `;
+
+      const metricText = this.scene.add.text(cx, cy + 40, metricStr, {
+        fontFamily: 'Share Tech Mono, monospace',
+        fontSize: '11px',
+        color: '#f59e0b',
+        align: 'center'
+      }).setOrigin(0.5);
+
+      // Execute Button inside card
+      const btn = this.scene.add.rectangle(cx, cy + 80, cardWidth - 40, 32, 0x1e293b)
+        .setStrokeStyle(1, 0x38bdf8)
+        .setInteractive({ useHandCursor: true });
+      
+      const btnText = this.scene.add.text(cx, cy + 80, 'CONFIRM ACTION', {
+        fontFamily: 'Orbitron, sans-serif',
+        fontSize: '11px',
+        color: '#38bdf8'
+      }).setOrigin(0.5);
+
+      const triggerAction = () => {
+        soundFx.playClick(1100);
+        this.destroy();
+        choice.onSelect();
+      };
+
+      btn.on('pointerdown', triggerAction);
+      cardBg.on('pointerdown', triggerAction);
+
+      cardBg.on('pointerover', () => {
+        cardBg.setStrokeStyle(2, 0x38bdf8);
+        cardBg.setFillStyle(0x1e293b, 0.95);
+        soundFx.playClick(900);
+      });
+
+      cardBg.on('pointerout', () => {
+        cardBg.setStrokeStyle(1, 0x475569);
+        cardBg.setFillStyle(0x0f172a, 0.9);
+      });
+
+      this.add([cardBg, choiceTitle, choiceDetail, metricText, btn, btnText]);
+    });
+  }
+}
+

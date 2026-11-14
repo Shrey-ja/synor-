@@ -1,0 +1,131 @@
+{
+  "arcadia": {
+    "title": "Arcadia Planitia Subsurface Cryo-Geology",
+    "coordinates": "46.7°N, 168.0°W",
+    "experiments": [
+      {
+        "id": "exp_arcadia_gpr",
+        "title": "Experiment A: Polygonal Ice Scanning",
+        "instrument": "SHARAD / Surface Ground-Penetrating Radar (GPR)",
+        "description": "Grid survey of polygonal cryogenic frost wedges. Scan cell sectors using Radar, Neutron, or Thermal sensors to identify pure dielectric slabs.",
+        "gridSize": 6,
+        "requiredScans": 4,
+        "scientificYield": "Accurate dielectric mapping of 0.8m - 2.5m pure subsurface slab ice."
+      },
+      {
+        "id": "exp_arcadia_core",
+        "title": "Experiment B: Stratified Ice Core Extraction",
+        "instrument": "Percussive Rotary Cryo-Drill (PRCD)",
+        "description": "Select drill penetration depth. Deeper cores reach purer ice but consume high rover battery and risk bit-binding in basalt gravel.",
+        "options": [
+          {
+            "id": "shallow",
+            "name": "Shallow Drill (0.5m)",
+            "energyCost": 15,
+            "iceYield": 35,
+            "dustRatio": 42,
+            "saltPpm": 1850,
+            "risk": "Low"
+          },
+          {
+            "id": "moderate",
+            "name": "Mid-Depth Drill (1.5m)",
+            "energyCost": 28,
+            "iceYield": 68,
+            "dustRatio": 22,
+            "saltPpm": 940,
+            "risk": "Moderate"
+          },
+          {
+            "id": "deep",
+            "name": "Deep Bedrock Interface (3.2m)",
+            "energyCost": 45,
+            "iceYield": 96,
+            "dustRatio": 6,
+            "saltPpm": 310,
+            "risk": "High bit-torque strain"
+          }
+        ]
+      },
+      {
+        "id": "exp_arcadia_mreu",
+        "title": "Experiment C: Mars Regolith Extraction (MREU) Vapor Chamber",
+        "instrument": "Sealed Sublimation Distillation Reactor",
+        "description": "Sublimate ice-regolith slurry and condense water vapor. Verify purity against toxic perchlorate salts (ClO4-).",
+        "targetTempC": 120,
+        "optimalPressureKpa": 6.8,
+        "finding": "Water captured: 94.2% efficiency. CRITICAL DISCOVERY: Magnesium and calcium perchlorate concentration is 0.72 wt%, lethal without multi-stage ion exchange membranes."
+      },
+      {
+        "id": "exp_arcadia_regolith",
+        "title": "Experiment D: Regolith Geomechanics & Bearing Assessment",
+        "instrument": "Dynamic Cone Penetrometer & Soil Shear Vane",
+        "description": "Measure soil compaction and shear strength to qualify surface stability for future autonomous cargo landing pads.",
+        "parameters": [
+          { "metric": "Cohesion (kPa)", "nominal": 1.2, "measured": 1.45 },
+          { "metric": "Internal Friction Angle", "nominal": "35°", "measured": "37.2°" },
+          { "metric": "Bearing Capacity (kPa)", "nominal": 180, "measured": 240 }
+        ],
+        "rating": "OPTIMAL FOR LANDING INFRASTRUCTURE"
+      }
+    ]
+  },
+  "jezero": {
+    "title": "Jezero Crater Western Delta Astrobiology",
+    "coordinates": "18.38°N, 77.58°E",
+    "experiments": [
+      {
+        "id": "exp_jezero_delta",
+        "title": "Experiment A: Ancient Delta Fluvial Reconstruction",
+        "instrument": "LiDAR Topographic Profiler & Multispectral Imager",
+        "description": "Align laser scanner along western delta scarp to reconstruct ancient lakebed bathymetry and sediment deposition rates.",
+        "targetStrata": ["Kodiak Butte Scarp", "Delta Front Bottomsets", "Prodelta Mudstone"],
+        "scienceReward": "Verified sustained 200,000-year fluvial lacustrine environment in Jezero paleolake."
+      },
+      {
+        "id": "exp_jezero_mineral",
+        "title": "Experiment B: Raman & XRF Spectroscopy",
+        "instrument": "Ultra-Deep UV Raman & Micro-XRF Sensor",
+        "description": "Fire UV laser pulses into fine-grain mudstones to identify hydrated smectite clay minerals and carbonate cements.",
+        "spectraPeaks": [
+          { "peak": "Fe-Smectite", "wavelength": "364 nm", "confidence": 0.98 },
+          { "peak": "Magnesite (Carbonate)", "wavelength": "512 nm", "confidence": 0.94 },
+          { "peak": "Jarosite Sulfate", "wavelength": "680 nm", "confidence": 0.89 }
+        ]
+      },
+      {
+        "id": "exp_jezero_bio",
+        "title": "Experiment C: Potential Biosignature Screening",
+        "instrument": "Deep-UV Fluorescence & Core Encapsulation Tube",
+        "description": "Screen dense carbonaceous laminae. Detect spatial co-location of polycyclic aromatic hydrocarbons and silicate matrices.",
+        "organicMolecules": ["Aromatic Carbon Rings", "Aliphatic Carboxylic Chains", "Reduced Organic Carbon"],
+        "biosignatureConfidence": "High Potential Biosignature (Sample Tube #SY-09 sealed in hermetic titanium sleeve)"
+      },
+      {
+        "id": "exp_jezero_weather",
+        "title": "Experiment D: Mars Environmental Dynamics Station (MEDA)",
+        "instrument": "Ultrasonic Anemometer & TIRS Radiometer",
+        "description": "Deploy standing environmental sensor mast to log pre-conjunction atmospheric tau (dust opacity) and thermal cycles.",
+        "readings": {
+          "ambientPressure": "610 Pa",
+          "surfaceTemp": "-64°C",
+          "windSpeed": "18.4 m/s gusts",
+          "dustOpacityTau": "1.42 (RISING RAPIDLY)"
+        }
+      }
+    ],
+    "branchingChoice": {
+      "prompt": "DIAGNOSTIC CRITICAL: LREV telemetry reports mechanical drive pinion fissure and incoming continent-scale dust front. What is your command?",
+      "optionA": {
+        "title": "Option A: Abort Sample & Immediate Retreat to Gale Crater",
+        "description": "Discontinue final deep-strata core extraction. Turn LREV south toward Gale before conjunction locks down communication. (Cautious route / Early return ending)",
+        "targetOutcome": "retreat_gale"
+      },
+      "optionB": {
+        "title": "Option B: Secure Ancient Biosignature Sample (Canon Mission)",
+        "description": "Complete the hermetic titanium seal on the high-value Jezero core. The drivetrain fractures completely under load. Stranded at Jezero Field Shelter for the 14-Day Solar Conjunction.",
+        "targetOutcome": "conjunction_survival"
+      }
+    }
+  }
+}

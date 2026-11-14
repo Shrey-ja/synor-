@@ -1,246 +1,436 @@
 /**
  * Start Menu Scene
- * 4-Layer multi-depth parallax starfield, Mars limb, drifting asteroids,
- * pulsing outpost beacon, and seamless zero-cut camera zoom transition into Gale Base.
+ * Features:
+ * - Photorealistic Mars positioned in the bottom-right quadrant with authentic texture.
+ * - Active colonization habitat dome on the Martian surface with glowing interior, solar arrays, and pulsing beacon.
+ * - Deep space starfield with realistic stellar magnitudes and subtle atmospheric rim glow.
+ * - Sleek, left-aligned sci-fi menu with mature typography and audio feedback.
+ * - Smooth camera swoop panning beyond the stars into infinite black void, seamlessly transitioning into the Blender cutscene.
  */
 
 import Phaser from 'phaser';
 import { AudioSettingsModal } from '../ui/AudioSettingsModal';
+import { MissionDossierModal } from '../ui/MissionDossierModal';
 import { soundFx } from '../utils/ProceduralAudio';
-import { attachBlenderSceneSlot } from '../utils/BlenderSceneBridge';
+import { ProceduralGraphics } from '../utils/ProceduralGraphics';
 
 export class StartMenuScene extends Phaser.Scene {
   private menuContainer!: Phaser.GameObjects.Container;
-  private asteroids: { sprite: Phaser.GameObjects.Arc; speedX: number; speedY: number; rotSpeed: number }[] = [];
+  private marsContainer!: Phaser.GameObjects.Container;
+  private starsContainer!: Phaser.GameObjects.Container;
   private beaconGlow!: Phaser.GameObjects.Arc;
+  private beaconRing!: Phaser.GameObjects.Arc;
+  private isStarting = false;
 
   constructor() {
     super({ key: 'StartMenuScene' });
   }
 
   create() {
-    // Initialize ambient audio on first user gesture to comply with browser audio policies
+    this.isStarting = false;
+
+    // Ambient audio on first user gesture
     this.input.once('pointerdown', () => {
       soundFx.startSpaceAtmosphereDrone();
     });
 
-    // Attach Blender Slot or Procedural Parallax Backdrop
-    attachBlenderSceneSlot(this, 'START_MENU', () => {
-      this.createProceduralParallaxBackdrop();
+    // 1. Deep Space Void & Realistic Starfield (Left/Background)
+    this.createDeepSpaceStarfield();
+
+    // 2. Realistic Mars in the Bottom-Right with Colonization Habitat Dome
+    this.createRealisticMars();
+
+    // 3. Left-Aligned Sci-Fi UI
+    this.createLeftAlignedMenu();
+
+    // 4. Subtle, Mature Mouse Parallax (2.5D Depth)
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (this.isStarting) return;
+      const normX = (pointer.x - 960) / 960;
+      const normY = (pointer.y - 540) / 540;
+
+      // Stars have deep background parallax
+      this.starsContainer.x = normX * -12;
+      this.starsContainer.y = normY * -8;
+
+      // Mars has midground parallax
+      this.marsContainer.x = normX * -22;
+      this.marsContainer.y = normY * -15;
+
+      // Menu has slight foreground float
+      this.menuContainer.x = 160 + normX * 6;
+      this.menuContainer.y = 220 + normY * 4;
     });
 
-    this.createDriftingAsteroids();
-    this.createMinimalistUI();
-
-    // Mouse parallax tracking
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      const offsetX = (pointer.x - 960) * 0.02;
-      const offsetY = (pointer.y - 540) * 0.02;
-      this.cameras.main.scrollX = offsetX;
-      this.cameras.main.scrollY = offsetY;
+    // Keyboard shortcut to start expedition immediately
+    this.input.keyboard?.addKey('ENTER').on('down', () => {
+      if (!this.isStarting) this.handleStartTransition();
     });
   }
 
-  private createProceduralParallaxBackdrop() {
-    // Layer 0: Deep space gradient + Stars
-    const bg = this.add.rectangle(960, 540, 2400, 1400, 0x020307)
-      .setScrollFactor(0.05);
+  private createDeepSpaceStarfield() {
+    this.starsContainer = this.add.container(0, 0);
 
-    // Procedural twinkling starfield
-    for (let i = 0; i < 220; i++) {
+    // Deep space gradient backdrop
+    const bg = this.add.rectangle(960, 540, 2400, 1400, 0x020409);
+    this.starsContainer.add(bg);
+
+    // Faint interstellar dust veil in deep space (upper-left)
+    for (let d = 0; d < 5; d++) {
+      const neb = this.add.circle(300 + d * 180, 240 + (d % 3) * 120, 240 + d * 40, 0x0c1e38, 0.08);
+      this.starsContainer.add(neb);
+    }
+
+    // Realistic multi-magnitude starfield
+    for (let i = 0; i < 240; i++) {
       const sx = Phaser.Math.Between(0, 2400);
       const sy = Phaser.Math.Between(0, 1400);
-      const radius = Math.random() < 0.15 ? 2.2 : (Math.random() < 0.5 ? 1.5 : 0.8);
-      const star = this.add.circle(sx, sy, radius, 0xffffff, Math.random() * 0.8 + 0.2)
-        .setScrollFactor(0.05);
+
+      // Varying astronomical magnitudes (mostly faint, a few prominent)
+      let radius = 0.8;
+      let alpha = Math.random() * 0.6 + 0.3;
+      let tint = 0xffffff;
+
+      const r = Math.random();
+      if (r < 0.08) {
+        radius = 2.0;
+        alpha = 0.95;
+        tint = 0xe0f2fe; // Blue-white giant
+      } else if (r < 0.25) {
+        radius = 1.4;
+        alpha = 0.8;
+        tint = 0xfef3c7; // Pale yellow star
+      }
+
+      const star = this.add.circle(sx, sy, radius, tint, alpha);
+      this.starsContainer.add(star);
+
+      // Gentle, realistic twinkling (slow sinusoids, no harsh strobe)
+      if (Math.random() < 0.6) {
+        this.tweens.add({
+          targets: star,
+          alpha: { from: alpha * 0.3, to: alpha },
+          duration: Phaser.Math.Between(2000, 4800),
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+          delay: Phaser.Math.Between(0, 3000)
+        });
+      }
+    }
+
+    // Rare subtle drifting cosmic dust motes
+    for (let m = 0; m < 12; m++) {
+      const mx = Phaser.Math.Between(80, 1200);
+      const my = Phaser.Math.Between(60, 900);
+      const dust = this.add.circle(mx, my, 1, 0x94a3b8, 0.4);
+      this.starsContainer.add(dust);
 
       this.tweens.add({
-        targets: star,
-        alpha: { from: 0.2, to: 1.0 },
-        duration: Phaser.Math.Between(1200, 3500),
+        targets: dust,
+        x: mx + Phaser.Math.Between(-60, 60),
+        y: my + Phaser.Math.Between(-40, 40),
+        alpha: { from: 0.1, to: 0.6 },
+        duration: Phaser.Math.Between(8000, 16000),
+        repeat: -1,
+        yoyo: true,
+        ease: 'Linear'
+      });
+    }
+  }
+
+  private createRealisticMars() {
+    this.marsContainer = this.add.container(0, 0);
+
+    // Check if the photorealistic 3D render exists
+    const hasRealisticTexture = this.textures.exists('mars_menu_realistic');
+    const hasBlenderSlot = this.textures.exists('blender_start_menu');
+
+    if (hasRealisticTexture || hasBlenderSlot) {
+      const texKey = hasRealisticTexture ? 'mars_menu_realistic' : 'blender_start_menu';
+      const marsImg = this.add.image(960, 540, texKey);
+      marsImg.setDisplaySize(1920, 1080);
+      this.marsContainer.add(marsImg);
+    } else {
+      // Procedural fallback: generate realistic textured 3D Mars sphere
+      const sphereKey = ProceduralGraphics.generateRealisticMarsSphere(this, 'mars_sphere_procedural', 1200);
+      const marsSphere = this.add.image(1420, 840, sphereKey);
+      marsSphere.setDisplaySize(1280, 1280);
+      this.marsContainer.add(marsSphere);
+    }
+
+    // Atmospheric limb glow layer (thin cyan-amber Rayleigh scattering)
+    const atmoRim = this.add.ellipse(1420, 820, 1260, 1260, 0x38bdf8, 0.08)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.marsContainer.add(atmoRim);
+
+    this.tweens.add({
+      targets: atmoRim,
+      alpha: { from: 0.06, to: 0.14 },
+      duration: 3500,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    // Active Human Colonization Habitat Dome on Mars Surface
+    // Located on the sunlit curve of Mars near the terminator
+    const domeX = 1260;
+    const domeY = 640;
+
+    // Dome Beacon Glow & Expanding Telemetry Ring
+    this.beaconGlow = this.add.circle(domeX, domeY - 14, 5, 0x38bdf8, 1.0);
+    this.beaconRing = this.add.circle(domeX, domeY - 14, 6, 0x38bdf8, 0.8)
+      .setStrokeStyle(1.5, 0x38bdf8);
+
+    this.marsContainer.add([this.beaconRing, this.beaconGlow]);
+
+    // Pulsing beacon light
+    this.tweens.add({
+      targets: this.beaconGlow,
+      scale: { from: 0.8, to: 2.2 },
+      alpha: { from: 1.0, to: 0.2 },
+      duration: 1400,
+      repeat: -1,
+      yoyo: true,
+      ease: 'Sine.easeInOut'
+    });
+
+    // Expanding radar/telemetry ping ring
+    this.tweens.add({
+      targets: this.beaconRing,
+      scale: { from: 1, to: 4.5 },
+      alpha: { from: 0.9, to: 0 },
+      duration: 2400,
+      repeat: -1,
+      ease: 'Cubic.easeOut'
+    });
+
+    // High-Tech Diegetic HUD Tag for the Colonization Dome
+    const hudContainer = this.add.container(domeX, domeY);
+
+    // Callout hairline
+    const line = this.add.graphics();
+    line.lineStyle(1, 0x38bdf8, 0.6);
+    line.beginPath();
+    line.moveTo(0, -18);
+    line.lineTo(-40, -60);
+    line.lineTo(-180, -60);
+    line.stroke();
+
+    // Callout badge text
+    const badgeText = this.add.text(-185, -84, 'GALE BASE // HABITAT CORE 01', {
+      fontFamily: 'Share Tech Mono, monospace',
+      fontSize: '11px',
+      color: '#38bdf8',
+      letterSpacing: 2
+    });
+
+    const statusText = this.add.text(-185, -68, 'STATUS: COMMISSIONING ACTIVE [SOL 0]', {
+      fontFamily: 'Share Tech Mono, monospace',
+      fontSize: '9px',
+      color: '#94a3b8',
+      letterSpacing: 1
+    });
+
+    hudContainer.add([line, badgeText, statusText]);
+    this.marsContainer.add(hudContainer);
+  }
+
+  private createLeftAlignedMenu() {
+    this.menuContainer = this.add.container(160, 220);
+
+    // 1. Mission Classification Badge
+    const badgeBg = this.add.rectangle(0, -50, 360, 24, 0x071120, 0.8)
+      .setStrokeStyle(1, 0x38bdf8, 0.5)
+      .setOrigin(0, 0.5);
+
+    const badgeText = this.add.text(12, -50, 'ARES MISSION // HARD-SCIENCE EXPEDITION 2047', {
+      fontFamily: 'Share Tech Mono, monospace',
+      fontSize: '11px',
+      color: '#38bdf8',
+      letterSpacing: 2
+    }).setOrigin(0, 0.5);
+
+    // 2. Main Title: SYNOR
+    const title = this.add.text(0, 0, 'SYNOR', {
+      fontFamily: 'Orbitron, sans-serif',
+      fontSize: '78px',
+      fontStyle: '900',
+      color: '#f8fafc',
+      letterSpacing: 16
+    }).setOrigin(0, 0);
+
+    // Subtitle
+    const subtitle = this.add.text(4, 92, 'THE SILENCE BETWEEN WORLDS', {
+      fontFamily: 'Share Tech Mono, monospace',
+      fontSize: '17px',
+      color: '#38bdf8',
+      letterSpacing: 8
+    }).setOrigin(0, 0);
+
+    // Narrative Tagline / Mood Setup
+    const tagline = this.add.text(4, 128, 'Humanity sent an explorer to uncover the secrets of Mars.\nIt did not prepare him for being alone.', {
+      fontFamily: 'Rajdhani, sans-serif',
+      fontSize: '15px',
+      color: '#94a3b8',
+      lineSpacing: 6,
+      letterSpacing: 1
+    }).setOrigin(0, 0);
+
+    // Divider Line
+    const divider = this.add.rectangle(0, 185, 420, 1, 0x38bdf8, 0.3).setOrigin(0, 0.5);
+
+    // 3. Left-Aligned Menu Options
+    const btnStart = this.createSleekMenuButton(0, 220, 'START EXPEDITION [ENTER]', true, () => this.handleStartTransition());
+    const btnDossier = this.createSleekMenuButton(0, 285, 'MISSION DOSSIER & LOGS', false, () => {
+      soundFx.playClick(1000);
+      new MissionDossierModal(this);
+    });
+    const btnAudio = this.createSleekMenuButton(0, 350, 'AUDIO SUBSYSTEMS', false, () => {
+      soundFx.playClick(1000);
+      new AudioSettingsModal(this);
+    });
+    const btnAbort = this.createSleekMenuButton(0, 415, 'ABORT PROTOCOL', false, () => {
+      soundFx.playClick(600);
+      window.location.reload();
+    });
+
+    // 4. NASA Mars Trek Geodetic Telemetry Footer (Bottom Left)
+    const telemetry = this.add.text(4, 495, 'NASA MARS TREK TOPOGRAPHY // MOLA ELEVATION // DSN CARRIER LOCK', {
+      fontFamily: 'Share Tech Mono, monospace',
+      fontSize: '10px',
+      color: '#475569',
+      letterSpacing: 1
+    }).setOrigin(0, 0);
+
+    this.menuContainer.add([
+      badgeBg,
+      badgeText,
+      title,
+      subtitle,
+      tagline,
+      divider,
+      btnStart,
+      btnDossier,
+      btnAudio,
+      btnAbort,
+      telemetry
+    ]);
+  }
+
+  private createSleekMenuButton(
+    x: number,
+    y: number,
+    label: string,
+    isPrimary: boolean,
+    onClick: () => void
+  ): Phaser.GameObjects.Container {
+    const btnCont = this.add.container(x, y);
+
+    const width = 360;
+    const height = 46;
+
+    // Background rectangle
+    const bg = this.add.rectangle(0, 0, width, height, isPrimary ? 0x0c1e36 : 0x070d18, 0.85)
+      .setStrokeStyle(1, isPrimary ? 0x38bdf8 : 0x334155, isPrimary ? 0.8 : 0.6)
+      .setOrigin(0, 0.5)
+      .setInteractive({ useHandCursor: true });
+
+    // Glowing left indicator bar
+    const indicator = this.add.rectangle(0, 0, 4, height, isPrimary ? 0x38bdf8 : 0x475569)
+      .setOrigin(0, 0.5);
+
+    // Label text
+    const txt = this.add.text(24, 0, label, {
+      fontFamily: 'Orbitron, sans-serif',
+      fontSize: '13px',
+      color: isPrimary ? '#f0f9ff' : '#94a3b8',
+      letterSpacing: 2
+    }).setOrigin(0, 0.5);
+
+    // Hover effects
+    bg.on('pointerover', () => {
+      bg.setFillStyle(0x132e52, 0.95);
+      bg.setStrokeStyle(1.5, 0x38bdf8, 1);
+      indicator.setFillStyle(0x38bdf8);
+      indicator.setScale(2, 1);
+      txt.setColor('#ffffff');
+      soundFx.playClick(1200);
+    });
+
+    bg.on('pointerout', () => {
+      bg.setFillStyle(isPrimary ? 0x0c1e36 : 0x070d18, 0.85);
+      bg.setStrokeStyle(1, isPrimary ? 0x38bdf8 : 0x334155, isPrimary ? 0.8 : 0.6);
+      indicator.setFillStyle(isPrimary ? 0x38bdf8 : 0x475569);
+      indicator.setScale(1, 1);
+      txt.setColor(isPrimary ? '#f0f9ff' : '#94a3b8');
+    });
+
+    bg.on('pointerdown', onClick);
+
+    // If primary, add subtle breathing glow on border
+    if (isPrimary) {
+      this.tweens.add({
+        targets: indicator,
+        alpha: { from: 0.6, to: 1.0 },
+        duration: 1200,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
       });
     }
 
-    // Layer 1: Distant Nebula Dust
-    for (let n = 0; n < 8; n++) {
-      const nx = 400 + n * 240;
-      const ny = 200 + (n % 3) * 120;
-      const neb = this.add.circle(nx, ny, 160 + n * 15, 0x3b1842, 0.12)
-        .setScrollFactor(0.2);
-    }
-
-    // Layer 2: Mars Limb Artwork & Atmospheric Rim Glow
-    // Atmospheric outer glow
-    const atmosGlow = this.add.ellipse(960, 1380, 2100, 1300, 0xdd6b20, 0.18)
-      .setScrollFactor(0.45);
-    const atmosRim = this.add.ellipse(960, 1380, 2040, 1240, 0x38bdf8, 0.25)
-      .setScrollFactor(0.45);
-
-    // Planet body
-    const marsBody = this.add.ellipse(960, 1400, 2000, 1200, 0x9c4221, 1.0)
-      .setScrollFactor(0.45);
-
-    // Outpost Beacon on Mars Horizon
-    const outpostX = 1280;
-    const outpostY = 780;
-    const outpostPylon = this.add.rectangle(outpostX, outpostY, 6, 24, 0x475569)
-      .setScrollFactor(0.45);
-    this.beaconGlow = this.add.circle(outpostX, outpostY - 14, 6, 0x38bdf8, 1.0)
-      .setScrollFactor(0.45);
-
-    this.tweens.add({
-      targets: this.beaconGlow,
-      scale: { from: 0.6, to: 2.2 },
-      alpha: { from: 1.0, to: 0.1 },
-      duration: 1200,
-      repeat: -1,
-      yoyo: true,
-      ease: 'Sine.easeInOut'
-    });
-  }
-
-  private createDriftingAsteroids() {
-    // Layer 3: Object-pooled drifting asteroids in foreground/midground
-    for (let i = 0; i < 18; i++) {
-      const ax = Phaser.Math.Between(100, 1820);
-      const ay = Phaser.Math.Between(80, 900);
-      const size = Phaser.Math.Between(4, 14);
-      const asteroid = this.add.circle(ax, ay, size, 0x334155, 0.75)
-        .setStrokeStyle(1, 0x475569)
-        .setScrollFactor(0.9);
-
-      this.asteroids.push({
-        sprite: asteroid,
-        speedX: Phaser.Math.FloatBetween(-0.4, 0.4),
-        speedY: Phaser.Math.FloatBetween(-0.2, 0.3),
-        rotSpeed: Phaser.Math.FloatBetween(-0.01, 0.01)
-      });
-    }
-  }
-
-  private createMinimalistUI() {
-    this.menuContainer = this.add.container(960, 480);
-
-    // Title
-    const title = this.add.text(0, -120, 'SYNOR', {
-      fontFamily: 'Orbitron, sans-serif',
-      fontSize: '76px',
-      fontStyle: '900',
-      color: '#f8fafc',
-      letterSpacing: 16
-    }).setOrigin(0.5);
-
-    const subtitle = this.add.text(0, -40, 'THE SILENCE BETWEEN WORLDS', {
-      fontFamily: 'Share Tech Mono, monospace',
-      fontSize: '18px',
-      color: '#38bdf8',
-      letterSpacing: 8
-    }).setOrigin(0.5);
-
-    const tagline = this.add.text(0, -8, 'HUMANITY SENT AN EXPLORER TO UNCOVER MARS. IT DID NOT PREPARE HIM FOR BEING ALONE.', {
-      fontFamily: 'Rajdhani, sans-serif',
-      fontSize: '14px',
-      color: '#94a3b8',
-      letterSpacing: 2
-    }).setOrigin(0.5);
-
-    // Three Buttons: Start Game, Settings, Exit
-    const btnStart = this.createMenuButton(0, 80, 'START EXPEDITION', () => this.handleStartTransition());
-    const btnSettings = this.createMenuButton(0, 150, 'AUDIO SUBSYSTEMS', () => {
-      soundFx.playClick(1000);
-      new AudioSettingsModal(this);
-    });
-    const btnExit = this.createMenuButton(0, 220, 'ABORT PROTOCOL', () => {
-      soundFx.playClick(600);
-      window.location.reload();
-    });
-
-    // Version & Hard-Science Tag
-    const footText = this.add.text(0, 320, 'HARD-SCIENCE MARS MISSION // NASA MARS TREK GEODYNAMICS // 2047', {
-      fontFamily: 'Share Tech Mono, monospace',
-      fontSize: '11px',
-      color: '#475569'
-    }).setOrigin(0.5);
-
-    this.menuContainer.add([title, subtitle, tagline, btnStart, btnSettings, btnExit, footText]);
-  }
-
-  private createMenuButton(x: number, y: number, label: string, onClick: () => void): Phaser.GameObjects.Container {
-    const btnCont = this.add.container(x, y);
-
-    const bg = this.add.rectangle(0, 0, 320, 48, 0x0a101d, 0.85)
-      .setStrokeStyle(1, 0x38bdf8, 0.6)
-      .setInteractive({ useHandCursor: true });
-
-    const txt = this.add.text(0, 0, label, {
-      fontFamily: 'Orbitron, sans-serif',
-      fontSize: '14px',
-      color: '#38bdf8',
-      letterSpacing: 3
-    }).setOrigin(0.5);
-
-    bg.on('pointerover', () => {
-      bg.setFillStyle(0x38bdf8, 0.25);
-      bg.setStrokeStyle(2, 0x38bdf8, 1);
-      txt.setColor('#ffffff');
-      soundFx.playClick(1200);
-    });
-
-    bg.on('pointerout', () => {
-      bg.setFillStyle(0x0a101d, 0.85);
-      bg.setStrokeStyle(1, 0x38bdf8, 0.6);
-      txt.setColor('#38bdf8');
-    });
-
-    bg.on('pointerdown', onClick);
-
-    btnCont.add([bg, txt]);
+    btnCont.add([bg, indicator, txt]);
     return btnCont;
   }
 
   /**
-   * Zero-Cut Seamless Transition to GaleBaseScene:
-   * Tweens menu alpha to 0, pans and zooms camera smoothly through the asteroids
-   * straight into the Martian surface without black screens!
+   * Cinematic Start Transition:
+   * Smoothly fades and slides menu out,
+   * camera pans up and away from Mars beyond the stars into pure deep void,
+   * and launches the Blender Cutscene Scene!
    */
   private handleStartTransition() {
+    if (this.isStarting) return;
+    this.isStarting = true;
+
     soundFx.playTelemetryChirp();
 
     // Disable all inputs
     this.input.enabled = false;
 
-    // Fade out menu container over 1000ms
+    // 1. Fade and slide menu UI away to the left
     this.tweens.add({
       targets: this.menuContainer,
+      x: -300,
       alpha: 0,
-      y: '+=40',
-      duration: 1000,
+      duration: 900,
+      ease: 'Cubic.easeIn'
+    });
+
+    // 2. Camera sweeps away from Mars: zooms slightly and pans deep into the black void
+    // Panning top-left moves the view away from Mars in bottom-right
+    this.cameras.main.pan(300, 200, 2200, 'Sine.easeInOut');
+    this.cameras.main.zoomTo(1.5, 2200, 'Sine.easeInOut');
+
+    // 3. Mars recedes and fades as we enter the cosmic blackness
+    this.tweens.add({
+      targets: this.marsContainer,
+      alpha: 0.15,
+      x: '+=120',
+      y: '+=120',
+      duration: 1800,
       ease: 'Sine.easeInOut'
     });
 
-    // Zero-cut dramatic camera zoom & pan toward Martian surface
-    this.cameras.main.pan(1280, 800, 2600, 'Sine.easeInOut');
-    this.cameras.main.zoomTo(2.6, 2600, 'Sine.easeInOut');
-
-    this.time.delayedCall(2500, () => {
-      this.scene.start('GaleBaseScene');
-      this.scene.launch('HUDScene');
+    // 4. Fade to absolute deep space blackness before launching the Blender cutscene
+    this.time.delayedCall(1600, () => {
+      this.cameras.main.fadeOut(800, 1, 2, 4);
     });
-  }
 
-  update() {
-    // Animate drifting asteroids
-    this.asteroids.forEach(a => {
-      a.sprite.x += a.speedX;
-      a.sprite.y += a.speedY;
-      if (a.sprite.x < -50) a.sprite.x = 2000;
-      if (a.sprite.x > 2000) a.sprite.x = -50;
-      if (a.sprite.y < -50) a.sprite.y = 1150;
-      if (a.sprite.y > 1150) a.sprite.y = -50;
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('CutsceneScene');
     });
   }
 }
-

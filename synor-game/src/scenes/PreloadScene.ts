@@ -28,6 +28,9 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('astronaut_portrait', '/assets/sprites/astronaut_portrait.png');
     this.load.image('astronaut_idle', '/assets/sprites/astronaut_idle.png');
 
+    // Load realistic Mars menu backdrop if available
+    this.load.image('mars_menu_realistic', '/assets/renders/mars_menu_realistic.jpg');
+
     // Only load Blender 3D scene renders that genuinely exist in /public/assets/renders/
     const existingRenders = import.meta.glob('/public/assets/renders/*.{png,jpg,jpeg,webp}', { eager: true });
     const existingFileNames = Object.keys(existingRenders).map(p => p.split('/').pop());

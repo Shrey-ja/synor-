@@ -7,6 +7,7 @@ import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { PreloadScene } from './scenes/PreloadScene';
 import { StartMenuScene } from './scenes/StartMenuScene';
+import { CutsceneScene } from './scenes/CutsceneScene';
 import { HUDScene } from './scenes/HUDScene';
 import { GaleBaseScene } from './scenes/GaleBaseScene';
 import { ExpeditionMapScene } from './scenes/ExpeditionMapScene';
@@ -36,6 +37,7 @@ const config: Phaser.Types.Core.GameConfig = {
     BootScene,
     PreloadScene,
     StartMenuScene,
+    CutsceneScene,
     GaleBaseScene,
     ExpeditionMapScene,
     ArcadiaFieldScene,

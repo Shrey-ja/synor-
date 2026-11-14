@@ -203,5 +203,165 @@ export class ProceduralGraphics {
     scene.textures.addCanvas(key, canvas);
     return key;
   }
+
+  /**
+   * Generates a photorealistic textured Mars globe with 3D spherical shading,
+   * craters, Valles Marineris canyon, atmospheric limb, and an illuminated colonization habitat dome.
+   */
+  public static generateRealisticMarsSphere(scene: Phaser.Scene, key = 'mars_sphere_procedural', size = 1024): string {
+    if (scene.textures.exists(key)) return key;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return key;
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const radius = size * 0.44;
+
+    // 1. Atmospheric Outer Glow (Rayleigh scattering)
+    const atmoGrad = ctx.createRadialGradient(cx, cy, radius * 0.95, cx, cy, radius * 1.08);
+    atmoGrad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+    atmoGrad.addColorStop(0.3, 'rgba(234, 88, 12, 0.3)');
+    atmoGrad.addColorStop(0.8, 'rgba(56, 189, 248, 0.08)');
+    atmoGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = atmoGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 1.08, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Planet Disc Clip
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Base Martian Regolith color
+    ctx.fillStyle = '#9c3818';
+    ctx.fillRect(0, 0, size, size);
+
+    // 3. Martian Surface Albedo & Maria (darker basaltic lowlands)
+    const albedoPatterns = [
+      { x: cx - radius * 0.3, y: cy - radius * 0.1, r: radius * 0.45, col: '#5c1f0d' },
+      { x: cx + radius * 0.1, y: cy + radius * 0.3, r: radius * 0.5, col: '#45170a' },
+      { x: cx - radius * 0.5, y: cy + radius * 0.2, r: radius * 0.35, col: '#6e2710' },
+      { x: cx + radius * 0.4, y: cy - radius * 0.3, r: radius * 0.3, col: '#50190a' }
+    ];
+    albedoPatterns.forEach(p => {
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+      g.addColorStop(0, p.col);
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 4. Craters & Topographic Details
+    const craters = [
+      { x: cx - radius * 0.4, y: cy - radius * 0.3, r: 28 },
+      { x: cx - radius * 0.1, y: cy - radius * 0.5, r: 18 },
+      { x: cx + radius * 0.2, y: cy - radius * 0.2, r: 35 },
+      { x: cx - radius * 0.2, y: cy + radius * 0.15, r: 24 },
+      { x: cx + radius * 0.3, y: cy + radius * 0.2, r: 42 },
+      { x: cx - radius * 0.6, y: cy - radius * 0.05, r: 16 },
+      { x: cx + radius * 0.05, y: cy + radius * 0.45, r: 22 }
+    ];
+    craters.forEach(c => {
+      // Crater floor shadow
+      ctx.fillStyle = 'rgba(30, 8, 4, 0.65)';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.fill();
+      // Sunlit rim highlight
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.45)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(c.x - 1, c.y - 1, c.r, Math.PI * 0.8, Math.PI * 1.8);
+      ctx.stroke();
+    });
+
+    // Valles Marineris canyon cut
+    ctx.strokeStyle = '#2d0c05';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(cx - radius * 0.4, cy);
+    ctx.bezierCurveTo(cx - radius * 0.1, cy + 18, cx + radius * 0.2, cy - 10, cx + radius * 0.5, cy + 15);
+    ctx.stroke();
+
+    // 5. Northern Polar Ice Cap (Carbon dioxide & water ice frost)
+    const polarGrad = ctx.createRadialGradient(cx, cy - radius * 0.9, 0, cx, cy - radius * 0.9, radius * 0.32);
+    polarGrad.addColorStop(0, '#f1f5f9');
+    polarGrad.addColorStop(0.6, 'rgba(226, 232, 240, 0.85)');
+    polarGrad.addColorStop(0.9, 'rgba(186, 230, 253, 0.3)');
+    polarGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = polarGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - radius * 0.88, radius * 0.35, radius * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 6. Realistic 3D Spherical Light & Terminator Shadow
+    // Sun shines from top-left (lightOriginX, lightOriginY)
+    const lightX = cx - radius * 0.45;
+    const lightY = cy - radius * 0.45;
+    const sphereLight = ctx.createRadialGradient(lightX, lightY, radius * 0.1, lightX, lightY, radius * 1.4);
+    sphereLight.addColorStop(0, 'rgba(255, 180, 140, 0.28)'); // Sunlit warm specular
+    sphereLight.addColorStop(0.4, 'rgba(0, 0, 0, 0)');
+    sphereLight.addColorStop(0.65, 'rgba(15, 5, 2, 0.5)'); // Terminator transition
+    sphereLight.addColorStop(0.95, 'rgba(2, 1, 1, 0.97)'); // Deep night side
+    ctx.fillStyle = sphereLight;
+    ctx.fillRect(0, 0, size, size);
+
+    // 7. Small Colonization Research Dome on the sunlit limb
+    const domeX = cx - radius * 0.38;
+    const domeY = cy - radius * 0.48;
+
+    // Small foundation pad
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.ellipse(domeX, domeY + 4, 18, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Habitat Dome (translucent glass/composite with warm interior glow)
+    const domeGrad = ctx.createRadialGradient(domeX, domeY - 4, 1, domeX, domeY, 12);
+    domeGrad.addColorStop(0, '#fef08a'); // Warm internal habitat lighting
+    domeGrad.addColorStop(0.5, '#f59e0b');
+    domeGrad.addColorStop(0.9, 'rgba(56, 189, 248, 0.7)'); // Outer structural shield
+    domeGrad.addColorStop(1, 'rgba(30, 41, 59, 0.9)');
+    ctx.fillStyle = domeGrad;
+    ctx.beginPath();
+    ctx.arc(domeX, domeY, 12, Math.PI, 0, false);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Solar array wings
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(domeX - 28, domeY + 1, 10, 4);
+    ctx.fillRect(domeX + 18, domeY + 1, 10, 4);
+
+    // Antenna Mast
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(domeX, domeY - 12);
+    ctx.lineTo(domeX, domeY - 24);
+    ctx.stroke();
+
+    // Beacon Light
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.arc(domeX, domeY - 25, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    scene.textures.addCanvas(key, canvas);
+    return key;
+  }
 }
 

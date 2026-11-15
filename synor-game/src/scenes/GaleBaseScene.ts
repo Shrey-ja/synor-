@@ -690,15 +690,26 @@ export class GaleBaseScene extends Phaser.Scene {
         this.astronaut.play('astro_walk_right', true);
       }
 
-      // Footstep cadence with authentic surface audio modulation (sand, gravel, metal)
-      if (time - this.lastFootstepTime > 290) {
-        // Landing pad and central station metal walkways
-        const onMetal = (this.astronaut.x >= 2260 && this.astronaut.x <= 2640 && this.astronaut.y >= 1220 && this.astronaut.y <= 1500) ||
-                        (this.astronaut.x >= 1440 && this.astronaut.x <= 1760 && this.astronaut.y >= 960 && this.astronaut.y <= 1160);
-        // Rocky scarps, scree, and sedimentary butte terrain
-        const onGravel = this.astronaut.y > 1350 || this.astronaut.x < 450 || this.astronaut.x > 2650;
-        const surface = onMetal ? 'metal' : (onGravel ? 'gravel' : 'sand');
+      // Uniform footstep cadence: ground noise on Martian soil, metal clank on platforms
+      if (time - this.lastFootstepTime > 275) {
+        const x = this.astronaut.x;
+        const y = this.astronaut.y;
 
+        // Structured metal surfaces across Gale Outpost:
+        // 1. Ares Rocket Landing Platform (East Sector)
+        // 2. Central Habitat Deck & Airlock Ramps (Central Sector)
+        // 3. Rover Hangar Maintenance Apron (Central-West Sector)
+        // 4. Solar & Kilopower Platform (North-West Sector)
+        // 5. High-Gain Earth Relay Plinth (North-East Sector)
+        // 6. Science Lab & Drill Platform (South Sector)
+        const onMetal = (x >= 2250 && x <= 2650 && y >= 1180 && y <= 1520) ||
+                        (x >= 1420 && x <= 1780 && y >= 940 && y <= 1180) ||
+                        (x >= 920 && x <= 1260 && y >= 940 && y <= 1180) ||
+                        (x >= 480 && x <= 780 && y >= 340 && y <= 520) ||
+                        (x >= 2040 && x <= 2260 && y >= 340 && y <= 520) ||
+                        (x >= 1380 && x <= 1720 && y >= 1600 && y <= 1800);
+
+        const surface = onMetal ? 'metal' : 'ground';
         audioManager.playStep(this, surface, 0.42);
         this.lastFootstepTime = time;
       }

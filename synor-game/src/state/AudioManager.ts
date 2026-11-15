@@ -222,16 +222,18 @@ export class AudioManager {
   }
 
   /**
-   * Play dynamic footstep sound with pitch variation based on terrain surface.
+   * Play uniform footstep sound based on surface:
+   * - 'ground': uniform Martian regolith ground step
+   * - 'metal': crisp metallic clank step
    */
   public playStep(
     scene: Phaser.Scene,
-    surface: 'sand' | 'gravel' | 'metal' | 'heavy_sand' | 'heavy_gravel' = 'sand',
-    volume = 0.4
+    surface: 'ground' | 'metal' | 'sand' | 'gravel' = 'ground',
+    volume = 0.42
   ) {
-    const key = `sfx_step_${surface}`;
-    const detune = Phaser.Math.Between(-45, 45); // Natural human cadence pitch variation
-    this.playSfx(scene, key, { volume, detune });
+    const key = surface === 'metal' ? 'sfx_step_metal' : 'sfx_step_ground';
+    // Uniform pitch & volume - zero detune for uniform cadence
+    this.playSfx(scene, key, { volume, detune: 0 });
   }
 }
 

@@ -62,7 +62,8 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio('music_menu', '/assets/audio/music/menu_chiptune.mp3');
     this.load.audio('music_game', '/assets/audio/music/game_warm_marimba.mp3');
 
-    // Load Movement Footstep Sounds
+    // Load Movement Footstep Sounds (Ground & Metal)
+    this.load.audio('sfx_step_ground', '/assets/audio/sfx/step_sand.wav');
     this.load.audio('sfx_step_sand', '/assets/audio/sfx/step_sand.wav');
     this.load.audio('sfx_step_gravel', '/assets/audio/sfx/step_gravel.wav');
     this.load.audio('sfx_step_metal', '/assets/audio/sfx/step_metal.wav');

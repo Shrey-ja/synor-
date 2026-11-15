@@ -1,9 +1,10 @@
 /**
  * Audio Architecture Controller
  * Manages Master, Music, and SFX channels, persists to localStorage,
- * and controls Web Audio synthesizer and Phaser SoundManager.
+ * and controls background music looping and sound effects across Phaser scenes.
  */
 
+import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
 
 export interface AudioSettings {
@@ -18,9 +19,13 @@ export class AudioManager {
   private static instance: AudioManager;
   private settings: AudioSettings = {
     master: 0.8,
-    music: 0.6,
-    sfx: 0.7
+    music: 0.65,
+    sfx: 0.75
   };
+
+  private currentMusicKey: string | null = null;
+  private currentMusicSound: Phaser.Sound.BaseSound | null = null;
+  private activeScene: Phaser.Scene | null = null;
 
   private constructor() {
     this.loadFromStorage();
@@ -40,8 +45,8 @@ export class AudioManager {
         const parsed = JSON.parse(saved);
         this.settings = {
           master: typeof parsed.master === 'number' ? parsed.master : 0.8,
-          music: typeof parsed.music === 'number' ? parsed.music : 0.6,
-          sfx: typeof parsed.sfx === 'number' ? parsed.sfx : 0.7
+          music: typeof parsed.music === 'number' ? parsed.music : 0.65,
+          sfx: typeof parsed.sfx === 'number' ? parsed.sfx : 0.75
         };
       }
     } catch (e) {
@@ -86,8 +91,148 @@ export class AudioManager {
       this.settings.master * this.settings.music,
       this.settings.master * this.settings.sfx
     );
+
+    if (this.currentMusicSound) {
+      const musicVol = this.settings.master * this.settings.music;
+      // WebAudioSound in Phaser has setVolume method
+      if ('setVolume' in this.currentMusicSound && typeof (this.currentMusicSound as { setVolume: (v: number) => void }).setVolume === 'function') {
+        (this.currentMusicSound as { setVolume: (v: number) => void }).setVolume(musicVol);
+      }
+    }
+  }
+
+  /**
+   * Play background music track seamlessly across scenes.
+   * If the requested track is already playing, it will continue uninterrupted.
+   */
+  public playMusic(
+    scene: Phaser.Scene,
+    key: string,
+    options: { loop?: boolean; volume?: number; fadeIn?: number } = {}
+  ) {
+    this.activeScene = scene;
+
+    // If this exact track is already playing, keep looping seamlessly
+    if (this.currentMusicKey === key && this.currentMusicSound && this.currentMusicSound.isPlaying) {
+      return;
+    }
+
+    // Stop or fade out previous music if different
+    if (this.currentMusicSound && this.currentMusicSound.isPlaying) {
+      if (options.fadeIn && options.fadeIn > 0) {
+        const oldSound = this.currentMusicSound;
+        scene.tweens.add({
+          targets: oldSound,
+          volume: 0,
+          duration: options.fadeIn / 2,
+          onComplete: () => {
+            oldSound.stop();
+            oldSound.destroy();
+          }
+        });
+      } else {
+        this.currentMusicSound.stop();
+        this.currentMusicSound.destroy();
+      }
+    }
+
+    if (!scene.cache.audio.exists(key)) {
+      console.warn(`[AudioManager] Music key '${key}' not found in audio cache.`);
+      return;
+    }
+
+    const targetVolume = this.settings.master * this.settings.music * (options.volume ?? 1);
+
+    try {
+      const sound = scene.sound.add(key, {
+        loop: options.loop ?? true,
+        volume: (options.fadeIn && options.fadeIn > 0) ? 0 : targetVolume
+      });
+
+      sound.play();
+      this.currentMusicKey = key;
+      this.currentMusicSound = sound;
+
+      if (options.fadeIn && options.fadeIn > 0) {
+        scene.tweens.add({
+          targets: sound,
+          volume: targetVolume,
+          duration: options.fadeIn,
+          ease: 'Linear'
+        });
+      }
+    } catch (e) {
+      console.warn(`[AudioManager] Failed to play music '${key}':`, e);
+    }
+  }
+
+  /**
+   * Stop currently playing background music, with optional fade-out.
+   */
+  public stopMusic(fadeOut = 0) {
+    if (!this.currentMusicSound) return;
+
+    const sound = this.currentMusicSound;
+    this.currentMusicKey = null;
+    this.currentMusicSound = null;
+
+    if (fadeOut > 0 && this.activeScene && sound.isPlaying) {
+      this.activeScene.tweens.add({
+        targets: sound,
+        volume: 0,
+        duration: fadeOut,
+        onComplete: () => {
+          sound.stop();
+          sound.destroy();
+        }
+      });
+    } else {
+      sound.stop();
+      sound.destroy();
+    }
+  }
+
+  /**
+   * Play a one-shot sound effect with volume and detune control.
+   */
+  public playSfx(
+    scene: Phaser.Scene,
+    key: string,
+    options: { volume?: number; detune?: number; rate?: number } = {}
+  ) {
+    if (!scene || !scene.sound) return;
+
+    const effectiveVolume = this.settings.master * this.settings.sfx * (options.volume ?? 1);
+    if (effectiveVolume <= 0.001) return;
+
+    if (scene.cache.audio.exists(key)) {
+      try {
+        scene.sound.play(key, {
+          volume: effectiveVolume,
+          detune: options.detune ?? 0,
+          rate: options.rate ?? 1
+        });
+      } catch (e) {
+        console.warn(`[AudioManager] Error playing SFX '${key}':`, e);
+      }
+    } else {
+      // Fallback click sound
+      soundFx.playClick(1000);
+    }
+  }
+
+  /**
+   * Play dynamic footstep sound with pitch variation based on terrain surface.
+   */
+  public playStep(
+    scene: Phaser.Scene,
+    surface: 'sand' | 'gravel' | 'metal' | 'heavy_sand' | 'heavy_gravel' = 'sand',
+    volume = 0.4
+  ) {
+    const key = `sfx_step_${surface}`;
+    const detune = Phaser.Math.Between(-45, 45); // Natural human cadence pitch variation
+    this.playSfx(scene, key, { volume, detune });
   }
 }
 
 export const audioManager = AudioManager.getInstance();
-

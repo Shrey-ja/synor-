@@ -14,6 +14,7 @@
 import Phaser from 'phaser';
 import { gameState } from '../state/GameState';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 import { MarsMapModal } from '../ui/MarsMapModal';
 
 interface OutpostNode {
@@ -216,7 +217,8 @@ export class GaleBaseScene extends Phaser.Scene {
     this.createScreenHUD();
     this.createFastTravelToast();
 
-    // Ambient Space Atmosphere Audio
+    // Ambient Atmosphere & Continuous In-Game Music Loop ('warm marimba')
+    audioManager.playMusic(this, 'music_game', { loop: true, fadeIn: 800 });
     soundFx.startSpaceAtmosphereDrone();
 
     // Check Act III return
@@ -403,12 +405,13 @@ export class GaleBaseScene extends Phaser.Scene {
     if (this.actionDialogContainer) return;
 
     if (this.activeMapModal) {
+      audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.65 });
       this.activeMapModal.close();
       this.activeMapModal = null;
       return;
     }
 
-    soundFx.playTelemetryChirp();
+    audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.75 });
     this.astronaut.setVelocity(0, 0);
 
     this.activeMapModal = new MarsMapModal(
@@ -433,8 +436,9 @@ export class GaleBaseScene extends Phaser.Scene {
     this.astronaut.setVelocity(0, 0);
     this.astronaut.setDepth(this.astronaut.y);
 
-    // Audio chirp & camera teleport flash
-    soundFx.playTelemetryChirp();
+    // Audio SFX: Teleport warp ignition + pop + flash
+    audioManager.playSfx(this, 'sfx_teleport_warp', { volume: 0.85 });
+    audioManager.playSfx(this, 'sfx_teleport_pop', { volume: 0.7 });
     this.cameras.main.flash(350, 56, 189, 248);
     this.cameras.main.pan(x, y, 400, 'Sine.easeOut');
 
@@ -485,9 +489,12 @@ export class GaleBaseScene extends Phaser.Scene {
 
       // Interactive pointer trigger
       ring.setInteractive({ useHandCursor: true });
+      ring.on('pointerover', () => {
+        audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.4 });
+      });
       ring.on('pointerdown', () => {
         if (!this.activeMapModal && !this.actionDialogContainer) {
-          soundFx.playClick(1000);
+          audioManager.playSfx(this, 'sfx_ui_click', { volume: 0.7 });
           this.openNodeDialog(node);
         }
       });
@@ -556,12 +563,16 @@ export class GaleBaseScene extends Phaser.Scene {
     mapBtnBg.on('pointerover', () => {
       mapBtnBg.setFillStyle(0x13385e, 0.95);
       mapBtnText.setColor('#ffffff');
+      audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.45 });
     });
     mapBtnBg.on('pointerout', () => {
       mapBtnBg.setFillStyle(0x0a192f, 0.9);
       mapBtnText.setColor('#38bdf8');
     });
-    mapBtnBg.on('pointerdown', () => this.toggleMapModal());
+    mapBtnBg.on('pointerdown', () => {
+      audioManager.playSfx(this, 'sfx_ui_click', { volume: 0.7 });
+      this.toggleMapModal();
+    });
 
     // Bottom Controls Hint Bar
     const controlsBg = this.add.rectangle(960, 1020, 880, 30, 0x070e1c, 0.92)
@@ -679,11 +690,16 @@ export class GaleBaseScene extends Phaser.Scene {
         this.astronaut.play('astro_walk_right', true);
       }
 
-      // Footstep cadence with terrain acoustic modulation
+      // Footstep cadence with authentic surface audio modulation (sand, gravel, metal)
       if (time - this.lastFootstepTime > 290) {
-        const isRockyTerrain = this.astronaut.y > 1400 || this.astronaut.x < 1000;
-        const pitch = isRockyTerrain ? (320 + Math.random() * 40) : (460 + Math.random() * 60);
-        soundFx.playClick(pitch);
+        // Landing pad and central station metal walkways
+        const onMetal = (this.astronaut.x >= 2260 && this.astronaut.x <= 2640 && this.astronaut.y >= 1220 && this.astronaut.y <= 1500) ||
+                        (this.astronaut.x >= 1440 && this.astronaut.x <= 1760 && this.astronaut.y >= 960 && this.astronaut.y <= 1160);
+        // Rocky scarps, scree, and sedimentary butte terrain
+        const onGravel = this.astronaut.y > 1350 || this.astronaut.x < 450 || this.astronaut.x > 2650;
+        const surface = onMetal ? 'metal' : (onGravel ? 'gravel' : 'sand');
+
+        audioManager.playStep(this, surface, 0.42);
         this.lastFootstepTime = time;
       }
     } else {
@@ -728,6 +744,8 @@ export class GaleBaseScene extends Phaser.Scene {
 
     this.astronaut.setVelocity(0, 0);
     this.interactionPrompt.setVisible(false);
+
+    audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.75 });
 
     const isDone = gameState.galeCommissionedNodes.includes(node.id);
 
@@ -774,6 +792,13 @@ export class GaleBaseScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     if (!isDone) {
+      btn.on('pointerover', () => {
+        btn.setFillStyle(0x0284c7, 0.95);
+        audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.45 });
+      });
+      btn.on('pointerout', () => {
+        btn.setFillStyle(0x0284c7, 0.85);
+      });
       btn.on('pointerdown', () => this.commissionNode(node));
       this.input.keyboard?.once('keydown-ENTER', () => {
         if (this.actionDialogContainer) this.commissionNode(node);
@@ -790,13 +815,20 @@ export class GaleBaseScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const doClose = () => {
-      soundFx.playClick(700);
+      audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.65 });
       if (this.actionDialogContainer) {
         this.actionDialogContainer.destroy();
         this.actionDialogContainer = null;
       }
     };
 
+    closeBtn.on('pointerover', () => {
+      closeBtn.setFillStyle(0x1f2937, 0.9);
+      audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.35 });
+    });
+    closeBtn.on('pointerout', () => {
+      closeBtn.setFillStyle(0x111827, 0.8);
+    });
     closeBtn.on('pointerdown', doClose);
     this.input.keyboard?.once('keydown-ESC', doClose);
 
@@ -804,7 +836,8 @@ export class GaleBaseScene extends Phaser.Scene {
   }
 
   private commissionNode(node: OutpostNode) {
-    soundFx.playTelemetryChirp();
+    audioManager.playSfx(this, 'sfx_ui_commission', { volume: 0.85 });
+    audioManager.playSfx(this, 'sfx_ui_confirm', { volume: 0.65 });
     if (!gameState.galeCommissionedNodes.includes(node.id)) {
       gameState.galeCommissionedNodes.push(node.id);
     }
@@ -841,8 +874,15 @@ export class GaleBaseScene extends Phaser.Scene {
         letterSpacing: 2
       }).setOrigin(0.5).setScrollFactor(0).setDepth(4201);
 
+      navBtn.on('pointerover', () => {
+        navBtn.setFillStyle(0x0369a1);
+        audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.5 });
+      });
+      navBtn.on('pointerout', () => {
+        navBtn.setFillStyle(0x0284c7);
+      });
       navBtn.on('pointerdown', () => {
-        soundFx.playClick(1200);
+        audioManager.playSfx(this, 'sfx_ui_confirm', { volume: 0.85 });
         gameState.currentChapter = 'act_2_arcadia';
         gameState.save();
         this.scene.start('ExpeditionMapScene');

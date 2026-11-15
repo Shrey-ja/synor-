@@ -13,6 +13,7 @@ import { gameState } from '../state/GameState';
 import { DecisionModal } from '../ui/DecisionModal';
 import { attachBlenderSceneSlot } from '../utils/BlenderSceneBridge';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 
 interface ConjunctionChoice {
   text: string;
@@ -48,6 +49,8 @@ export class JezeroShelterScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.playMusic(this, 'music_game', { loop: true });
+
     // Load conjunction data from cache
     const cachedData = this.cache.json.get('conjunction_data');
     if (cachedData && cachedData.conjunctionDays) {

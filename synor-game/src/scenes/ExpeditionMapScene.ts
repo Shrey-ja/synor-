@@ -17,6 +17,7 @@ import {
 import { ProceduralGraphics } from '../utils/ProceduralGraphics';
 import { attachBlenderSceneSlot } from '../utils/BlenderSceneBridge';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 
 export class ExpeditionMapScene extends Phaser.Scene {
   private mapWidth = 1400;
@@ -39,6 +40,8 @@ export class ExpeditionMapScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.playMusic(this, 'music_game', { loop: true });
+
     // Generate Procedural fallback map canvas
     ProceduralGraphics.generateMarsGlobalMap(this, 'mars_global_mola', this.mapWidth, this.mapHeight);
 

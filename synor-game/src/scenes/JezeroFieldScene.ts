@@ -9,6 +9,7 @@ import { gameState } from '../state/GameState';
 import { DecisionModal } from '../ui/DecisionModal';
 import { attachBlenderSceneSlot } from '../utils/BlenderSceneBridge';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 
 export class JezeroFieldScene extends Phaser.Scene {
   private activePanelContainer!: Phaser.GameObjects.Container;
@@ -20,6 +21,8 @@ export class JezeroFieldScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.playMusic(this, 'music_game', { loop: true });
+
     // Attach Blender Slot or Procedural Delta Backdrop
     attachBlenderSceneSlot(this, 'JEZERO_FIELD', () => {
       this.createProceduralJezeroBackdrop();

@@ -8,6 +8,7 @@
 
 import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 
 export class CutsceneScene extends Phaser.Scene {
   private videoElement: HTMLVideoElement | null = null;
@@ -28,6 +29,7 @@ export class CutsceneScene extends Phaser.Scene {
 
   create() {
     this.isSkipping = false;
+    audioManager.stopMusic(500);
     soundFx.startSpaceAtmosphereDrone();
 
     // Check if an MP4 or WebM video file exists
@@ -227,7 +229,7 @@ export class CutsceneScene extends Phaser.Scene {
     if (this.isSkipping) return;
     this.isSkipping = true;
 
-    soundFx.playTelemetryChirp();
+    audioManager.playSfx(this, 'sfx_ui_confirm', { volume: 0.8 });
     this.removeSkipOverlay();
 
     this.cameras.main.fadeOut(800, 0, 0, 0);

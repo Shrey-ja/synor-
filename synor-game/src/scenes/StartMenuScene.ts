@@ -11,6 +11,7 @@
 import Phaser from 'phaser';
 import { AudioSettingsModal } from '../ui/AudioSettingsModal';
 import { MissionDossierModal } from '../ui/MissionDossierModal';
+import { audioManager } from '../state/AudioManager';
 import { soundFx } from '../utils/ProceduralAudio';
 import { ProceduralGraphics } from '../utils/ProceduralGraphics';
 
@@ -29,10 +30,15 @@ export class StartMenuScene extends Phaser.Scene {
   create() {
     this.isStarting = false;
 
-    // Ambient audio on first user gesture
-    this.input.once('pointerdown', () => {
-      soundFx.startSpaceAtmosphereDrone();
-    });
+    // Start 16-Bit Chiptune Main Menu Music
+    audioManager.playMusic(this, 'music_menu', { loop: true, fadeIn: 800 });
+
+    // Browser audio policy unlock fallback
+    const resumeAudio = () => {
+      audioManager.playMusic(this, 'music_menu', { loop: true });
+    };
+    this.input.once('pointerdown', resumeAudio);
+    this.input.keyboard?.once('keydown', resumeAudio);
 
     // 1. Deep Space Void & Realistic Starfield (Left/Background)
     this.createDeepSpaceStarfield();
@@ -284,15 +290,15 @@ export class StartMenuScene extends Phaser.Scene {
     // 3. Left-Aligned Menu Options
     const btnStart = this.createSleekMenuButton(0, 220, 'START EXPEDITION [ENTER]', true, () => this.handleStartTransition());
     const btnDossier = this.createSleekMenuButton(0, 285, 'MISSION DOSSIER & LOGS', false, () => {
-      soundFx.playClick(1000);
+      audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.8 });
       new MissionDossierModal(this);
     });
     const btnAudio = this.createSleekMenuButton(0, 350, 'AUDIO SUBSYSTEMS', false, () => {
-      soundFx.playClick(1000);
+      audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.8 });
       new AudioSettingsModal(this);
     });
     const btnAbort = this.createSleekMenuButton(0, 415, 'ABORT PROTOCOL', false, () => {
-      soundFx.playClick(600);
+      audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.8 });
       window.location.reload();
     });
 
@@ -356,7 +362,7 @@ export class StartMenuScene extends Phaser.Scene {
       indicator.setFillStyle(0x38bdf8);
       indicator.setScale(2, 1);
       txt.setColor('#ffffff');
-      soundFx.playClick(1200);
+      audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.5 });
     });
 
     bg.on('pointerout', () => {
@@ -367,7 +373,10 @@ export class StartMenuScene extends Phaser.Scene {
       txt.setColor(isPrimary ? '#f0f9ff' : '#94a3b8');
     });
 
-    bg.on('pointerdown', onClick);
+    bg.on('pointerdown', () => {
+      audioManager.playSfx(this, 'sfx_ui_click', { volume: 0.7 });
+      onClick();
+    });
 
     // If primary, add subtle breathing glow on border
     if (isPrimary) {
@@ -395,7 +404,8 @@ export class StartMenuScene extends Phaser.Scene {
     if (this.isStarting) return;
     this.isStarting = true;
 
-    soundFx.playTelemetryChirp();
+    audioManager.playSfx(this, 'sfx_click_detonator', { volume: 0.85 });
+    audioManager.stopMusic(1500); // Fades out 16-bit chiptune smoothly
 
     // Disable all inputs
     this.input.enabled = false;

@@ -9,6 +9,8 @@ import { gameState } from '../state/GameState';
 import { resourceEngine } from '../state/ResourceEngine';
 import { AudioSettingsModal } from '../ui/AudioSettingsModal';
 import { soundFx } from '../utils/ProceduralAudio';
+import { uiSfx } from '../utils/UISoundFX';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export class HUDScene extends Phaser.Scene {
   private barsContainer!: Phaser.GameObjects.Container;
@@ -17,6 +19,7 @@ export class HUDScene extends Phaser.Scene {
   private logVisible: boolean = false;
   private evaBtnText!: Phaser.GameObjects.Text;
   private evaBtn!: Phaser.GameObjects.Rectangle;
+  private readonly onStateChange = () => this.updateTelemetry();
 
   constructor() {
     super({ key: 'HUDScene' });
@@ -33,12 +36,17 @@ export class HUDScene extends Phaser.Scene {
     this.updateTelemetry();
 
     // Listen for state changes
-    gameState.addEventListener('change', () => {
-      this.updateTelemetry();
-    });
+    gameState.removeEventListener('change', this.onStateChange);
+    gameState.addEventListener('change', this.onStateChange);
+    this.events.once('shutdown', this.handleShutdown, this);
 
     // Start background simulation
     resourceEngine.startSimulation();
+  }
+
+  private handleShutdown() {
+    gameState.removeEventListener('change', this.onStateChange);
+    resourceEngine.stopSimulation();
   }
 
   private createTopTelemetryBar() {
@@ -81,6 +89,27 @@ export class HUDScene extends Phaser.Scene {
 
     audioBtn.on('pointerover', () => audioBtn.setFillStyle(0x38bdf8, 0.25));
     audioBtn.on('pointerout', () => audioBtn.setFillStyle(0x1e293b, 0.8));
+
+    // Enhanced interaction (additive)
+    attachUIInteraction(this, audioBtn, {
+      colorTarget:      audioBtn,
+      hoverFill:        0x38bdf8,
+      hoverFillAlpha:   0.3,
+      defaultFill:      0x1e293b,
+      defaultFillAlpha: 0.8,
+      hoverStroke:      0x38bdf8,
+      hoverStrokeWidth: 1.5,
+      defaultStroke:    0x38bdf8,
+      defaultStrokeWidth: 1,
+      defaultStrokeAlpha: 0.8,
+      soundType:        'telemetry',
+      hoverScale:       1.04,
+      pressScale:       0.96,
+      tooltip:          'Open audio calibration panel (Master / Music / SFX gain buses).',
+      tooltipOffsetX:   -180,
+      tooltipOffsetY:   28,
+      tooltipDepth:     8000,
+    });
   }
 
   private createBottomCommsBar() {
@@ -153,6 +182,46 @@ export class HUDScene extends Phaser.Scene {
       this.refreshLogFeed();
     });
 
+    // Enhanced interaction (additive)
+    attachUIInteraction(this, commsBtn, {
+      colorTarget:      commsBtn,
+      hoverFill:        0x38bdf8,
+      hoverFillAlpha:   0.2,
+      defaultFill:      0x0f172a,
+      defaultFillAlpha: 0.9,
+      hoverStroke:      0x38bdf8,
+      hoverStrokeWidth: 1.5,
+      defaultStroke:    0x38bdf8,
+      defaultStrokeWidth: 1,
+      soundType:        'confirm',
+      hoverScale:       1.04,
+      pressScale:       0.96,
+      tooltip:          'View CAPCOM & flight telemetry comms log buffer.',
+      tooltipOffsetX:   24,
+      tooltipOffsetY:   -34,
+      tooltipDepth:     8000,
+    });
+
+    // EVA button enhanced interaction (additive)
+    attachUIInteraction(this, this.evaBtn, {
+      colorTarget:      this.evaBtn,
+      hoverFill:        0x10b981,
+      hoverFillAlpha:   0.2,
+      defaultFill:      0x1e293b,
+      defaultFillAlpha: 0.9,
+      hoverStroke:      0x10b981,
+      hoverStrokeWidth: 1.5,
+      defaultStroke:    0x10b981,
+      defaultStrokeWidth: 1,
+      soundType:        'confirm',
+      hoverScale:       1.04,
+      pressScale:       0.96,
+      tooltip:          'Cycle the habitat airlock. Consumes 3% air reserve to pressurize EVA seal.',
+      tooltipOffsetX:   24,
+      tooltipOffsetY:   -34,
+      tooltipDepth:     8000,
+    });
+
     // Live Feed Preview Text in Bottom Bar
     this.bottomPreview = this.add.text(440, 1056, 'TRANSMISSION READY.', {
       fontFamily: 'Share Tech Mono, monospace',
@@ -178,7 +247,10 @@ export class HUDScene extends Phaser.Scene {
       { label: 'THERM', val: Math.round(res.thermalStability), unit: '%', alert: res.thermalStability < 30 },
       { label: 'SHIELD', val: Math.round(res.shelterProtection * (res.waterReserve / 100)), unit: '%', alert: false },
       { label: 'CO2', val: Math.round(haz.co2Ppm), unit: 'ppm', alert: haz.co2Ppm > 3000 },
-      { label: 'RAD', val: haz.radiationDoseMsv.toFixed(1), unit: 'mSv', alert: haz.radiationDoseMsv > 80 }
+      { label: 'RAD', val: haz.radiationDoseMsv.toFixed(1), unit: 'mSv', alert: haz.radiationDoseMsv > 80 },
+      { label: 'SUIT', val: Math.round(gameState.suitBattery), unit: '%', alert: gameState.suitBattery < 20 },
+      { label: 'ICE', val: Math.round(gameState.waterIceReserve), unit: '%', alert: false },
+      { label: 'LOC', val: gameState.currentLocation.toUpperCase(), unit: '', alert: false }
     ];
 
     let startX = 300;

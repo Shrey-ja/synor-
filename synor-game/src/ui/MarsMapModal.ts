@@ -9,6 +9,8 @@
 import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
 import { audioManager } from '../state/AudioManager';
+import { uiSfx } from '../utils/UISoundFX';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export interface FastTravelPoint {
   id: string;
@@ -297,6 +299,27 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
           audioManager.playSfx(this.scene, 'sfx_ui_hover', { volume: 0.4 });
         });
         pinRing.on('pointerdown', doFastTravel);
+
+        // Enhanced interaction (additive) for travel card
+        attachUIInteraction(this.scene, cardBg, {
+          colorTarget:      cardBg,
+          hoverFill:        0x133866,
+          hoverFillAlpha:   0.95,
+          hoverStroke:      0x38bdf8,
+          hoverStrokeWidth: 1.5,
+          defaultFill:      0x091b32,
+          defaultFillAlpha: 0.9,
+          defaultStroke:    0x38bdf8,
+          defaultStrokeWidth: 1,
+          defaultStrokeAlpha: 0.75,
+          soundType:        'telemetry',
+          hoverScale:       1.02,
+          pressScale:       0.98,
+          tooltip:          wp.desc + '  //  ' + wp.coordText,
+          tooltipOffsetX:   24,
+          tooltipOffsetY:   -38,
+          tooltipDepth:     7500,
+        });
       }
 
       this.add([cardBg, cardTitle, cardSub, btnTravel]);
@@ -320,6 +343,26 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
     });
     closeBtn.on('pointerout', () => closeBtn.setFillStyle(0x111827, 0.9));
     closeBtn.on('pointerdown', () => this.close());
+
+    // Enhanced interaction (additive)
+    attachUIInteraction(this.scene, closeBtn, {
+      colorTarget:      closeBtn,
+      hoverFill:        0xef4444,
+      hoverFillAlpha:   0.3,
+      hoverStroke:      0xef4444,
+      hoverStrokeWidth: 2,
+      defaultFill:      0x111827,
+      defaultFillAlpha: 0.9,
+      defaultStroke:    0xef4444,
+      defaultStrokeWidth: 1.5,
+      soundType:        'cancel',
+      hoverScale:       1.05,
+      pressScale:       0.95,
+      tooltip:          'Close orbital reconnaissance map [M].',
+      tooltipOffsetX:   -200,
+      tooltipOffsetY:   32,
+      tooltipDepth:     7500,
+    });
 
     this.add([closeBtn, closeTxt]);
   }

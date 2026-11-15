@@ -7,6 +7,7 @@
 
 import { gameState, GameState } from './GameState';
 import { soundFx } from '../utils/ProceduralAudio';
+import { fetchTelemetryWithFallback } from '../utils/PlanetaryTelemetry';
 
 export interface DonkiSpaceWeather {
   flareClass: string;         // e.g., "M4.2" or "X1.5"
@@ -52,15 +53,12 @@ export class ResourceEngine {
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
 
-    try {
-      const response = await fetch(
-        `https://api.nasa.gov/DONKI/FLR?startDate=${startDate}&endDate=${endDate}&api_key=${apiKey}`
-      );
-      if (!response.ok) {
-        throw new Error(`NASA DONKI HTTP ${response.status}`);
-      }
+    const flares = await fetchTelemetryWithFallback<unknown[]>(
+      `https://api.nasa.gov/DONKI/FLR?startDate=${startDate}&endDate=${endDate}&api_key=${apiKey}`,
+      []
+    );
 
-      const flares = await response.json();
+    try {
       if (Array.isArray(flares) && flares.length > 0) {
         const latest = flares[flares.length - 1];
         const classType: string = latest.classType || 'C2.1';
@@ -266,12 +264,14 @@ export class ResourceEngine {
         'system'
       );
       soundFx.playAirlockHiss();
+      this.state.save();
       return true;
     } else {
       // Re-entering Habitat
       this.state.evaActive = false;
       this.state.addLog('AIRLOCK CYCLED: Interior seal restored. Explorer returned to habitat.', 'system');
       soundFx.playAirlockHiss();
+      this.state.save();
       return true;
     }
   }

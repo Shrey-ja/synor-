@@ -26,6 +26,13 @@ export interface PowerBreakers {
   commsGreenhouse: boolean;  // Comms dish & greenhouse lighting (15W)
 }
 
+export interface ShelterUpgradeState {
+  dome: boolean;
+  rimshade: boolean;
+  cap: boolean;
+  radiationUmbrella: boolean;
+}
+
 export interface LogMessage {
   id: string;
   timestamp: string;
@@ -75,6 +82,15 @@ export class GameState extends EventTarget {
   public evaActive: boolean = false;
   public suitO2: number = 100;
   public suitBattery: number = 100;
+  public waterIceReserve: number = 0;
+  public regolithSamples: number = 0;
+  public currentLocation: 'gale' | 'arcadia' | 'jezero' | 'jezero_shelter' = 'gale';
+  public shelterUpgrades: ShelterUpgradeState = {
+    dome: false,
+    rimshade: false,
+    cap: false,
+    radiationUmbrella: false
+  };
 
   // Mission Progression
   public currentChapter: ChapterId = 'act_1_prologue';
@@ -132,6 +148,10 @@ export class GameState extends EventTarget {
     this.evaActive = false;
     this.suitO2 = 100;
     this.suitBattery = 100;
+    this.waterIceReserve = 0;
+    this.regolithSamples = 0;
+    this.currentLocation = 'gale';
+    this.shelterUpgrades = { dome: false, rimshade: false, cap: false, radiationUmbrella: false };
     this.currentChapter = 'act_1_prologue';
     this.galeCommissionedNodes = [];
     this.arcadiaCompletedExperiments = [];
@@ -208,6 +228,9 @@ export class GameState extends EventTarget {
         resources: this.resources,
         hazards: this.hazards,
         breakers: this.breakers,
+        evaActive: this.evaActive,
+        suitO2: this.suitO2,
+        suitBattery: this.suitBattery,
         currentChapter: this.currentChapter,
         galeCommissionedNodes: this.galeCommissionedNodes,
         arcadiaCompletedExperiments: this.arcadiaCompletedExperiments,
@@ -221,7 +244,11 @@ export class GameState extends EventTarget {
         dsnLocked: this.dsnLocked,
         roverChassisIntact: this.roverChassisIntact,
         habitatSealedCompact: this.habitatSealedCompact,
-        spareScrubbersCount: this.spareScrubbersCount
+        spareScrubbersCount: this.spareScrubbersCount,
+        waterIceReserve: this.waterIceReserve,
+        regolithSamples: this.regolithSamples,
+        currentLocation: this.currentLocation,
+        shelterUpgrades: this.shelterUpgrades
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) {

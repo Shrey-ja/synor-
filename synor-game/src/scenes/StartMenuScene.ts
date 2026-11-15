@@ -14,6 +14,8 @@ import { MissionDossierModal } from '../ui/MissionDossierModal';
 import { audioManager } from '../state/AudioManager';
 import { soundFx } from '../utils/ProceduralAudio';
 import { ProceduralGraphics } from '../utils/ProceduralGraphics';
+import { uiSfx } from '../utils/UISoundFX';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export class StartMenuScene extends Phaser.Scene {
   private menuContainer!: Phaser.GameObjects.Container;
@@ -288,19 +290,36 @@ export class StartMenuScene extends Phaser.Scene {
     const divider = this.add.rectangle(0, 185, 420, 1, 0x38bdf8, 0.3).setOrigin(0, 0.5);
 
     // 3. Left-Aligned Menu Options
-    const btnStart = this.createSleekMenuButton(0, 220, 'START EXPEDITION [ENTER]', true, () => this.handleStartTransition());
-    const btnDossier = this.createSleekMenuButton(0, 285, 'MISSION DOSSIER & LOGS', false, () => {
-      audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.8 });
-      new MissionDossierModal(this);
-    });
-    const btnAudio = this.createSleekMenuButton(0, 350, 'AUDIO SUBSYSTEMS', false, () => {
-      audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.8 });
-      new AudioSettingsModal(this);
-    });
-    const btnAbort = this.createSleekMenuButton(0, 415, 'ABORT PROTOCOL', false, () => {
-      audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.8 });
-      window.location.reload();
-    });
+    const btnStart = this.createSleekMenuButton(
+      0, 220, 'START EXPEDITION [ENTER]', true,
+      () => this.handleStartTransition(),
+      'Begin the ARES Mars surface mission. Sol 0 operations commence.'
+    );
+    const btnDossier = this.createSleekMenuButton(
+      0, 285, 'MISSION DOSSIER & LOGS', false,
+      () => {
+        audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.8 });
+        new MissionDossierModal(this);
+      },
+      'Read mission briefings, crew science logs and expedition objectives.'
+    );
+    const btnAudio = this.createSleekMenuButton(
+      0, 350, 'AUDIO SUBSYSTEMS', false,
+      () => {
+        audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.8 });
+        new AudioSettingsModal(this);
+      },
+      'Calibrate Master, Music and SFX gain buses for all audio channels.'
+    );
+    const btnAbort = this.createSleekMenuButton(
+      0, 415, 'ABORT PROTOCOL', false,
+      () => {
+        uiSfx.cancel();
+        audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.8 });
+        window.location.reload();
+      },
+      'Reload the mission. All unsaved progress will be lost.'
+    );
 
     // 4. NASA Mars Trek Geodetic Telemetry Footer (Bottom Left)
     const telemetry = this.add.text(4, 495, 'NASA MARS TREK TOPOGRAPHY // MOLA ELEVATION // DSN CARRIER LOCK', {
@@ -330,7 +349,8 @@ export class StartMenuScene extends Phaser.Scene {
     y: number,
     label: string,
     isPrimary: boolean,
-    onClick: () => void
+    onClick: () => void,
+    tooltip?: string
   ): Phaser.GameObjects.Container {
     const btnCont = this.add.container(x, y);
 
@@ -355,7 +375,7 @@ export class StartMenuScene extends Phaser.Scene {
       letterSpacing: 2
     }).setOrigin(0, 0.5);
 
-    // Hover effects
+    // ── Existing hover / click handlers (preserved) ─────────────────────────
     bg.on('pointerover', () => {
       bg.setFillStyle(0x132e52, 0.95);
       bg.setStrokeStyle(1.5, 0x38bdf8, 1);
@@ -376,6 +396,21 @@ export class StartMenuScene extends Phaser.Scene {
     bg.on('pointerdown', () => {
       audioManager.playSfx(this, 'sfx_ui_click', { volume: 0.7 });
       onClick();
+    });
+
+    // ── Enhanced UI interaction (additive — does not replace any handlers above) ─
+    attachUIInteraction(this, bg, {
+      scaleTarget:      btnCont as unknown as Phaser.GameObjects.GameObject & { scaleX: number; scaleY: number },
+      playHoverSound:   true,
+      playClickSound:   isPrimary,
+      soundType:        isPrimary ? 'confirm' : 'confirm',
+      enableScaleBounce: true,
+      hoverScale:       1.025,
+      pressScale:       0.975,
+      tooltip:          tooltip,
+      tooltipOffsetX:   24,
+      tooltipOffsetY:   -38,
+      tooltipDepth:     9000,
     });
 
     // If primary, add subtle breathing glow on border

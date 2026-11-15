@@ -8,6 +8,7 @@
 
 import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 
 export interface FastTravelPoint {
   id: string;
@@ -130,6 +131,7 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
     this.onTeleportCallback = onTeleport;
     this.onCloseCallback = onClose;
 
+    audioManager.playSfx(scene, 'sfx_ui_modal_open', { volume: 0.75 });
     this.createMapUI();
     scene.add.existing(this);
     this.setDepth(500);
@@ -273,7 +275,7 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
       if (wp.isUnlocked && wp.targetX !== undefined && wp.targetY !== undefined) {
         cardBg.on('pointerover', () => {
           cardBg.setFillStyle(0x133866, 0.95);
-          soundFx.playClick(1000);
+          audioManager.playSfx(this.scene, 'sfx_ui_hover', { volume: 0.4 });
         });
 
         cardBg.on('pointerout', () => {
@@ -281,13 +283,16 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
         });
 
         const doFastTravel = () => {
-          soundFx.playTelemetryChirp();
+          audioManager.playSfx(this.scene, 'sfx_ui_click', { volume: 0.75 });
           this.onTeleportCallback(wp.targetX!, wp.targetY!, wp.name);
           this.close();
         };
 
         cardBg.on('pointerdown', doFastTravel);
         pinRing.setInteractive({ useHandCursor: true });
+        pinRing.on('pointerover', () => {
+          audioManager.playSfx(this.scene, 'sfx_ui_hover', { volume: 0.4 });
+        });
         pinRing.on('pointerdown', doFastTravel);
       }
 
@@ -306,7 +311,10 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
       letterSpacing: 2
     }).setOrigin(0.5);
 
-    closeBtn.on('pointerover', () => closeBtn.setFillStyle(0xef4444, 0.25));
+    closeBtn.on('pointerover', () => {
+      closeBtn.setFillStyle(0xef4444, 0.25);
+      audioManager.playSfx(this.scene, 'sfx_ui_hover', { volume: 0.35 });
+    });
     closeBtn.on('pointerout', () => closeBtn.setFillStyle(0x111827, 0.9));
     closeBtn.on('pointerdown', () => this.close());
 
@@ -314,7 +322,7 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
   }
 
   public close() {
-    soundFx.playClick(600);
+    audioManager.playSfx(this.scene, 'sfx_ui_modal_close', { volume: 0.65 });
     this.onCloseCallback();
     this.destroy();
   }

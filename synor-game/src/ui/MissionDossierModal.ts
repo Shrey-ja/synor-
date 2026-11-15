@@ -6,10 +6,12 @@
 
 import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 
 export class MissionDossierModal extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene) {
     super(scene, 960, 540);
+    audioManager.playSfx(scene, 'sfx_ui_modal_open', { volume: 0.75 });
     this.createModal();
     scene.add.existing(this);
     this.setDepth(200);
@@ -77,7 +79,7 @@ export class MissionDossierModal extends Phaser.GameObjects.Container {
     btnClose.on('pointerover', () => {
       btnClose.setFillStyle(0x38bdf8, 0.25);
       btnCloseText.setColor('#ffffff');
-      soundFx.playClick(1100);
+      audioManager.playSfx(this.scene, 'sfx_ui_hover', { volume: 0.4 });
     });
 
     btnClose.on('pointerout', () => {
@@ -86,7 +88,7 @@ export class MissionDossierModal extends Phaser.GameObjects.Container {
     });
 
     const doClose = () => {
-      soundFx.playClick(800);
+      audioManager.playSfx(this.scene, 'sfx_ui_modal_close', { volume: 0.65 });
       this.destroy();
     };
 

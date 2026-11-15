@@ -14,6 +14,7 @@ export class AudioSettingsModal extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, onClose?: () => void) {
     super(scene, 960, 540);
     this.closeCallback = onClose;
+    audioManager.playSfx(scene, 'sfx_ui_modal_open', { volume: 0.75 });
     this.createModal();
     scene.add.existing(this);
     this.setDepth(200);
@@ -78,7 +79,7 @@ export class AudioSettingsModal extends Phaser.GameObjects.Container {
 
     backBtn.on('pointerover', () => {
       backBtn.setFillStyle(0x38bdf8, 0.25);
-      soundFx.playClick(1000);
+      audioManager.playSfx(this.scene, 'sfx_ui_hover', { volume: 0.4 });
     });
 
     backBtn.on('pointerout', () => {
@@ -86,7 +87,7 @@ export class AudioSettingsModal extends Phaser.GameObjects.Container {
     });
 
     backBtn.on('pointerdown', () => {
-      soundFx.playClick(700);
+      audioManager.playSfx(this.scene, 'sfx_ui_click', { volume: 0.7 });
       this.close();
     });
 
@@ -151,6 +152,7 @@ export class AudioSettingsModal extends Phaser.GameObjects.Container {
   }
 
   public close() {
+    audioManager.playSfx(this.scene, 'sfx_ui_modal_close', { volume: 0.65 });
     this.destroy();
     if (this.closeCallback) {
       this.closeCallback();

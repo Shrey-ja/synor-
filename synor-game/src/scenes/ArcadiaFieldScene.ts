@@ -11,6 +11,7 @@ import Phaser from 'phaser';
 import { gameState } from '../state/GameState';
 import { attachBlenderSceneSlot } from '../utils/BlenderSceneBridge';
 import { soundFx } from '../utils/ProceduralAudio';
+import { audioManager } from '../state/AudioManager';
 
 export class ArcadiaFieldScene extends Phaser.Scene {
   private activePanelContainer!: Phaser.GameObjects.Container;
@@ -26,6 +27,8 @@ export class ArcadiaFieldScene extends Phaser.Scene {
   }
 
   create() {
+    audioManager.playMusic(this, 'music_game', { loop: true });
+
     // Attach Blender Slot or Procedural Arcadia Cryo Backdrop
     attachBlenderSceneSlot(this, 'ARCADIA_FIELD', () => {
       this.createProceduralArcadiaBackdrop();

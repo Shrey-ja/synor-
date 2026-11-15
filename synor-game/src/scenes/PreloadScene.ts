@@ -58,6 +58,29 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('outpost_rockmtn', '/assets/outpost/rock_mountain.png');
     this.load.image('outpost_ice', '/assets/outpost/ice_crystals.png');
 
+    // Load Background Music
+    this.load.audio('music_menu', '/assets/audio/music/menu_chiptune.mp3');
+    this.load.audio('music_game', '/assets/audio/music/game_warm_marimba.mp3');
+
+    // Load Movement Footstep Sounds (Ground & Metal)
+    this.load.audio('sfx_step_ground', '/assets/audio/sfx/step_sand.wav');
+    this.load.audio('sfx_step_sand', '/assets/audio/sfx/step_sand.wav');
+    this.load.audio('sfx_step_gravel', '/assets/audio/sfx/step_gravel.wav');
+    this.load.audio('sfx_step_metal', '/assets/audio/sfx/step_metal.wav');
+    this.load.audio('sfx_step_heavy_sand', '/assets/audio/sfx/step_heavy_sand.wav');
+    this.load.audio('sfx_step_heavy_gravel', '/assets/audio/sfx/step_heavy_gravel.wav');
+
+    // Load UI & Interaction Sound Effects
+    this.load.audio('sfx_ui_hover', '/assets/audio/sfx/ui_hover.mp3');
+    this.load.audio('sfx_ui_click', '/assets/audio/sfx/ui_click.mp3');
+    this.load.audio('sfx_ui_confirm', '/assets/audio/sfx/ui_confirm.mp3');
+    this.load.audio('sfx_ui_modal_open', '/assets/audio/sfx/ui_modal_open.mp3');
+    this.load.audio('sfx_ui_modal_close', '/assets/audio/sfx/ui_modal_close.mp3');
+    this.load.audio('sfx_ui_commission', '/assets/audio/sfx/ui_commission.mp3');
+    this.load.audio('sfx_teleport_warp', '/assets/audio/sfx/teleport_warp.wav');
+    this.load.audio('sfx_teleport_pop', '/assets/audio/sfx/teleport_pop.wav');
+    this.load.audio('sfx_click_detonator', '/assets/audio/sfx/click_detonator.wav');
+
     // Load individual components from assets2
     for (const r of ['q1', 'q2', 'q3', 'q4']) {
       for (let c = 1; c <= 7; c++) {

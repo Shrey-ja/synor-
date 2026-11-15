@@ -766,7 +766,52 @@ export class GaleBaseScene extends Phaser.Scene {
       .setInteractive();
 
     const panel = this.add.rectangle(0, 0, 720, 380, 0x070f1e, 0.97)
-      .setStrokeStyle(2, isDone ? 0x10b981 : 0x38bdf8, 0.9);
+      .setStrokeStyle(2, isDone ? 0x10b981 : 0x38bdf8, 0.9)
+      .setInteractive();
+
+    const doClose = () => {
+      audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.65 });
+      if (this.actionDialogContainer) {
+        this.actionDialogContainer.destroy();
+        this.actionDialogContainer = null;
+      }
+    };
+
+    // Clicking anywhere outside the modal dismisses it
+    blocker.on('pointerdown', doClose);
+
+    // Top-Right [✕] Exit Button
+    const exitBtnX = 720 / 2 - 36;
+    const exitBtnY = -380 / 2 + 32;
+    const exitBtnBg = this.add.rectangle(exitBtnX, exitBtnY, 34, 34, 0x111827, 0.9)
+      .setStrokeStyle(1.5, 0xef4444)
+      .setInteractive({ useHandCursor: true });
+    const exitBtnTxt = this.add.text(exitBtnX, exitBtnY, '✕', {
+      fontFamily: 'Orbitron, sans-serif',
+      fontSize: '18px',
+      color: '#ef4444'
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    exitBtnBg.on('pointerover', () => {
+      exitBtnBg.setFillStyle(0xef4444, 0.35);
+      exitBtnTxt.setColor('#ffffff');
+      audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.35 });
+    });
+    exitBtnTxt.on('pointerover', () => {
+      exitBtnBg.setFillStyle(0xef4444, 0.35);
+      exitBtnTxt.setColor('#ffffff');
+      audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.35 });
+    });
+    exitBtnBg.on('pointerout', () => {
+      exitBtnBg.setFillStyle(0x111827, 0.9);
+      exitBtnTxt.setColor('#ef4444');
+    });
+    exitBtnTxt.on('pointerout', () => {
+      exitBtnBg.setFillStyle(0x111827, 0.9);
+      exitBtnTxt.setColor('#ef4444');
+    });
+    exitBtnBg.on('pointerdown', doClose);
+    exitBtnTxt.on('pointerdown', doClose);
 
     const categoryText = this.add.text(0, -145, `[ ${node.category} ]`, {
       fontFamily: 'Share Tech Mono, monospace',
@@ -816,34 +861,60 @@ export class GaleBaseScene extends Phaser.Scene {
       });
     }
 
-    const closeBtn = this.add.rectangle(0, 150, 140, 28, 0x111827, 0.8)
+    const closeBtn = this.add.rectangle(0, 150, 160, 36, 0x111827, 0.9)
       .setStrokeStyle(1, 0x475569)
       .setInteractive({ useHandCursor: true });
-    const closeText = this.add.text(0, 150, 'BACK [ESC]', {
+    const closeText = this.add.text(0, 150, 'EXIT [ESC]', {
       fontFamily: 'Share Tech Mono, monospace',
-      fontSize: '11px',
+      fontSize: '12px',
       color: '#94a3b8'
-    }).setOrigin(0.5);
-
-    const doClose = () => {
-      audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.65 });
-      if (this.actionDialogContainer) {
-        this.actionDialogContainer.destroy();
-        this.actionDialogContainer = null;
-      }
-    };
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     closeBtn.on('pointerover', () => {
-      closeBtn.setFillStyle(0x1f2937, 0.9);
+      closeBtn.setFillStyle(0x1f2937, 0.95);
+      closeBtn.setStrokeStyle(1.5, 0x38bdf8);
+      closeText.setColor('#38bdf8');
+      audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.35 });
+    });
+    closeText.on('pointerover', () => {
+      closeBtn.setFillStyle(0x1f2937, 0.95);
+      closeBtn.setStrokeStyle(1.5, 0x38bdf8);
+      closeText.setColor('#38bdf8');
       audioManager.playSfx(this, 'sfx_ui_hover', { volume: 0.35 });
     });
     closeBtn.on('pointerout', () => {
-      closeBtn.setFillStyle(0x111827, 0.8);
+      closeBtn.setFillStyle(0x111827, 0.9);
+      closeBtn.setStrokeStyle(1, 0x475569);
+      closeText.setColor('#94a3b8');
+    });
+    closeText.on('pointerout', () => {
+      closeBtn.setFillStyle(0x111827, 0.9);
+      closeBtn.setStrokeStyle(1, 0x475569);
+      closeText.setColor('#94a3b8');
     });
     closeBtn.on('pointerdown', doClose);
+    closeText.on('pointerdown', doClose);
     this.input.keyboard?.once('keydown-ESC', doClose);
 
-    this.actionDialogContainer.add([blocker, panel, categoryText, title, desc, btn, btnText, closeBtn, closeText]);
+    this.time.delayedCall(150, () => {
+      if (this.actionDialogContainer) {
+        this.input.keyboard?.once('keydown-E', doClose);
+      }
+    });
+
+    this.actionDialogContainer.add([
+      blocker,
+      panel,
+      exitBtnBg,
+      exitBtnTxt,
+      categoryText,
+      title,
+      desc,
+      btn,
+      btnText,
+      closeBtn,
+      closeText
+    ]);
   }
 
   private commissionNode(node: OutpostNode) {

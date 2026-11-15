@@ -40,9 +40,9 @@ import { transitionToScene, fadeSceneIn } from '../utils/SceneTransition';
  * longitude 0-360) drive the relief model, so Olympus Mons, Hellas, Valles
  * Marineris, Gale, Jezero etc. sit where they sit on the real planet.
  *
- * Two layers are produced from ONE elevation model:
- *   - `<prefix>_real` : natural-colour shaded relief (albedo + dust + polar caps)
- *   - `<prefix>_mola` : MOLA-style hypsometric tint (blue lowlands -> white peaks)
+ * Two flat, 2D navigation-style layers are produced from ONE elevation model:
+ *   - `<prefix>_real` : terrain classes (navy -> teal -> slate -> amber), topo outlines, crater rings
+ *   - `<prefix>_mola` : smooth elevation gradient in the same palette with 2 km contour lines
  *
  * If you drop a real NASA Mars Trek / MOLA equirectangular image in the game
  * assets, the scene will use it automatically as a third layer.
@@ -143,15 +143,15 @@ export function eastLonToProjection(lonE: number, w: number, h: number): number 
 /* ------------------------------------------------------------------------- */
 
 const MOLA_STOPS: Array<[number, number, number, number]> = [
-  [-8, 16, 24, 110],
-  [-5, 30, 100, 200],
-  [-3, 40, 180, 190],
-  [-1, 90, 190, 100],
-  [1, 230, 220, 90],
-  [4, 235, 140, 50],
-  [8, 190, 70, 40],
-  [14, 150, 110, 100],
-  [21, 250, 250, 250]
+  [-8, 7, 30, 58],
+  [-4, 12, 74, 110],
+  [-1, 14, 116, 144],
+  [1, 28, 138, 143],
+  [3, 51, 78, 104],
+  [6, 120, 62, 24],
+  [11, 217, 119, 6],
+  [16, 251, 191, 36],
+  [21, 254, 243, 199]
 ];
 
 export function molaColorRGB(km: number): [number, number, number] {
@@ -172,6 +172,21 @@ export function molaColorHex(km: number): number {
   const [r, g, b] = molaColorRGB(km);
   return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
 }
+
+/** Flat terrain classes for the 2D navigation layer (UI palette: navy -> teal -> slate -> amber). */
+export const BANDS: Array<{ max: number; rgb: [number, number, number]; name: string }> = [
+  { max: -6, rgb: [7, 30, 58], name: 'DEEP BASIN' },
+  { max: -4, rgb: [10, 53, 88], name: 'BASIN FLOOR' },
+  { max: -2, rgb: [12, 74, 110], name: 'NORTHERN PLAINS' },
+  { max: 0, rgb: [14, 106, 134], name: 'LOWLANDS' },
+  { max: 1.5, rgb: [28, 138, 143], name: 'TRANSITION ZONE' },
+  { max: 3, rgb: [51, 78, 104], name: 'CRATERED HIGHLANDS' },
+  { max: 5, rgb: [71, 95, 120], name: 'ELEVATED HIGHLANDS' },
+  { max: 9, rgb: [146, 64, 14], name: 'VOLCANIC RISE' },
+  { max: 14, rgb: [217, 119, 6], name: 'VOLCANIC FLANKS' },
+  { max: 99, rgb: [251, 191, 36], name: 'SUMMITS' }
+];
+export const ICE_RGB: [number, number, number] = [224, 242, 254];
 
 /* ------------------------------------------------------------------------- */
 /*  Noise                                                                     */
@@ -329,6 +344,7 @@ export function generateMarsTerrainTextures(
 
   const elev = new Float32Array(N);
   const dark = new Float32Array(N);
+  const craterMask = new Uint8Array(N); // 1 = floor, 2 = rim outline
 
   /** Visit every pixel within rDeg of (latC, lonC). */
   const win = (latC: number, lonC: number, rDeg: number, fn: (i: number, dx: number, dy: number) => void) => {
@@ -360,7 +376,7 @@ export function generateMarsTerrainTextures(
       const t = smoothstep(-1, 1, (la - colBoundary[x]) / 9);
       const base = 1.3 - 3.9 * t;
       const large = (fbm(lo, la, 5, 6, 11) - 0.5) * 3.0 * (1 - 0.45 * t);
-      const detail = (fbm(lo, la, 3, 140, 23) - 0.5) * 0.8 * (1 - 0.3 * t);
+      const detail = (fbm(lo, la, 3, 140, 23) - 0.5) * 0.35 * (1 - 0.3 * t);
       elev[y * W + x] = base + large + detail;
     }
   }
@@ -405,9 +421,15 @@ export function generateMarsTerrainTextures(
     const R = dKm / 2 / KM_PER_DEG;
     const depth = clamp(0.028 * dKm, 0.25, 6) * depthScale;
     const rim = Math.max(0.05, 0.22 * depth);
+    const maskable = dKm >= 45;
+    const rimW = Math.max(0.07, 0.9 / (R / Math.abs(latStep)));
     win(latC, lonC, R * 2.3, (i, dx, dy) => {
       const d = Math.sqrt(dx * dx + dy * dy) / R;
       if (d >= 2.3) return;
+      if (maskable) {
+        if (Math.abs(d - 1) <= rimW) craterMask[i] = 2;
+        else if (d < 1 && craterMask[i] === 0) craterMask[i] = 1;
+      }
       let h: number;
       if (d < 1) {
         h = -depth * (1 - d * d);
@@ -447,17 +469,30 @@ export function generateMarsTerrainTextures(
     });
   }
 
-  /* 5. Shade + colourise ---------------------------------------------------- */
+  /* 5. Classify, contour + colourise (flat 2D navigation style) ------------- */
   const realImg = new ImageData(W, H);
   const molaImg = new ImageData(W, H);
   const rp = realImg.data;
   const mp = molaImg.data;
 
+  const bandArr = new Uint8Array(N);
+  const contourArr = new Int16Array(N);
+  for (let i = 0; i < N; i++) {
+    const e = elev[i];
+    let b = BANDS.length - 1;
+    for (let k = 0; k < BANDS.length; k++) {
+      if (e < BANDS[k].max) { b = k; break; }
+    }
+    bandArr[i] = b;
+    contourArr[i] = Math.floor(e / 2);
+  }
+
   const pxKm = (2 * Math.PI * 3396.2) / W;
-  const VE = 9; // vertical exaggeration
+  const VE = 9;
   const L = [-0.5, -0.5, 0.7];
   const Ll = Math.hypot(L[0], L[1], L[2]);
   const Lx = L[0] / Ll, Ly = L[1] / Ll, Lz = L[2] / Ll;
+  const lighten = (c: number, t: number) => c + (255 - c) * t;
 
   for (let y = 0; y < H; y++) {
     const ym = y > 0 ? y - 1 : y;
@@ -471,59 +506,66 @@ export function generateMarsTerrainTextures(
       const xm = x > 0 ? x - 1 : W - 1;
       const xp = x < W - 1 ? x + 1 : 0;
       const i = y * W + x;
+      const iL = y * W + xm, iR = y * W + xp, iU = ym * W + x, iD = yp * W + x;
       const lo = lon[x];
       const e = elev[i];
 
-      const dzdx = (elev[y * W + xp] - elev[y * W + xm]) / sx;
-      const dzdy = (elev[yp * W + x] - elev[ym * W + x]) / sy;
+      const dzdx = (elev[iR] - elev[iL]) / sx;
+      const dzdy = (elev[iD] - elev[iU]) / sy;
       const nx = -dzdx * VE;
       const ny = -dzdy * VE;
       const inv = 1 / Math.sqrt(nx * nx + ny * ny + 1);
       const lit = ((nx * Lx + ny * Ly + Lz) * inv) / Lz;
-      const m = clamp(0.25 + 0.75 * lit, 0.2, 1.45);
 
-      // --- Natural colour layer
-      let a = 0.52 + (fbm(lo, la, 4, 5, 41) - 0.5) * 0.55;
-      a += smoothstep(1.5, 9, e) * 0.18;
-      a += smoothstep(-4, -8, e) * 0.22;
-      a -= dark[i] * 0.5;
-      a = clamp(a, 0, 1);
-      let r = 88 + a * (218 - 88);
-      let g = 54 + a * (152 - 54);
-      let b = 40 + a * (106 - 40);
-
-      // Polar caps
       let ice = 0;
       if (absLa > 74) {
         const n = fbm(lo, la, 3, 24, 57) - 0.5;
         const edge = la > 0 ? 82 + n * 7 : 83.5 + n * 6;
-        ice = smoothstep(edge - 1.2, edge + 0.8, absLa);
+        ice = smoothstep(edge - 1.0, edge + 0.6, absLa);
       }
-
-      let rr = r * m;
-      let gg = g * m;
-      let bb = b * m;
-      if (ice > 0) {
-        const im = 0.78 + 0.22 * clamp(lit, 0.3, 1.2);
-        rr = rr + (238 * im - rr) * ice;
-        gg = gg + (243 * im - gg) * ice;
-        bb = bb + (250 * im - bb) * ice;
-      }
+      const cm = craterMask[i];
       const o = i * 4;
-      rp[o] = rr; rp[o + 1] = gg; rp[o + 2] = bb; rp[o + 3] = 255;
 
-      // --- MOLA hypsometric layer
-      const [cr, cg, cb] = molaColorRGB(e);
-      const mm = clamp(0.5 + 0.5 * lit, 0.3, 1.3);
-      let mr = cr * mm;
-      let mg = cg * mm;
-      let mb = cb * mm;
-      if (ice > 0) {
-        mr += (245 - mr) * ice * 0.55;
-        mg += (248 - mg) * ice * 0.55;
-        mb += (255 - mb) * ice * 0.55;
+      // --- Terrain classes: flat fills, topo outlines, 3-step cel shading
+      {
+        const bi = bandArr[i];
+        const band = BANDS[bi];
+        const cel = lit < 0.8 ? 0.85 : lit > 1.2 ? 1.12 : 1;
+        const tint = 1 - 0.2 * dark[i];
+        let r = band.rgb[0] * cel * tint;
+        let g = band.rgb[1] * cel * tint;
+        let b = band.rgb[2] * cel * tint;
+        if (bi !== bandArr[iL] || bi !== bandArr[iR] || bi !== bandArr[iU] || bi !== bandArr[iD]) {
+          r = lighten(r, 0.28); g = lighten(g, 0.28); b = lighten(b, 0.28);
+        }
+        if (cm === 2) { r = lighten(r, 0.4); g = lighten(g, 0.4); b = lighten(b, 0.4); }
+        else if (cm === 1) { r *= 0.88; g *= 0.88; b *= 0.88; }
+        if (ice > 0) {
+          r += (ICE_RGB[0] - r) * ice * 0.95;
+          g += (ICE_RGB[1] - g) * ice * 0.95;
+          b += (ICE_RGB[2] - b) * ice * 0.95;
+        }
+        rp[o] = r; rp[o + 1] = g; rp[o + 2] = b; rp[o + 3] = 255;
       }
-      mp[o] = mr; mp[o + 1] = mg; mp[o + 2] = mb; mp[o + 3] = 255;
+
+      // --- Elevation gradient: smooth palette ramp + 2 km contour lines
+      {
+        const [cr, cg, cb] = molaColorRGB(e);
+        const mm = 0.92 + 0.08 * clamp(lit, 0.6, 1.4);
+        let r = cr * mm, g = cg * mm, b = cb * mm;
+        const c = contourArr[i];
+        if (c !== contourArr[iL] || c !== contourArr[iR] || c !== contourArr[iU] || c !== contourArr[iD]) {
+          r = lighten(r, 0.2); g = lighten(g, 0.2); b = lighten(b, 0.2);
+        }
+        if (cm === 2) { r = lighten(r, 0.32); g = lighten(g, 0.32); b = lighten(b, 0.32); }
+        else if (cm === 1) { r *= 0.92; g *= 0.92; b *= 0.92; }
+        if (ice > 0) {
+          r += (ICE_RGB[0] - r) * ice * 0.8;
+          g += (ICE_RGB[1] - g) * ice * 0.8;
+          b += (ICE_RGB[2] - b) * ice * 0.8;
+        }
+        mp[o] = r; mp[o + 1] = g; mp[o + 2] = b; mp[o + 3] = 255;
+      }
     }
   }
 
@@ -598,7 +640,8 @@ export class ExpeditionMapScene extends Phaser.Scene {
   private gridLayer!: Phaser.GameObjects.Container;
   private featureLayer!: Phaser.GameObjects.Container;
   private landerLayer!: Phaser.GameObjects.Container;
-  private elevLegend!: Phaser.GameObjects.Container;
+  private classLegend!: Phaser.GameObjects.Container;
+  private gradLegend!: Phaser.GameObjects.Container;
   private sourceText!: Phaser.GameObjects.Text;
   private placedFeatures: PlacedFeature[] = [];
   private hoverRing!: Phaser.GameObjects.Arc;
@@ -701,7 +744,8 @@ export class ExpeditionMapScene extends Phaser.Scene {
     this.activeLayer = id;
     Object.entries(this.layerImages).forEach(([key, img]) => img.setVisible(key === id));
     Object.entries(this.layerButtons).forEach(([key, btn]) => btn.setActive(key === id));
-    this.elevLegend?.setVisible(id !== 'real');
+    this.classLegend?.setVisible(id === 'real');
+    this.gradLegend?.setVisible(id !== 'real');
     this.sourceText?.setText(this.getSourceLabel());
   }
 
@@ -1259,7 +1303,7 @@ export class ExpeditionMapScene extends Phaser.Scene {
 
     // Base layers
     let y = 222;
-    const layers: Array<[string, string]> = [['real', 'REALISTIC RELIEF'], ['mola', 'MOLA ELEVATION']];
+    const layers: Array<[string, string]> = [['real', 'TERRAIN CLASSES'], ['mola', 'ELEVATION GRADIENT']];
     if (this.layerImages['nasa']) layers.push(['nasa', 'NASA MOLA IMAGE']);
     layers.forEach(([id, label]) => {
       if (!this.layerImages[id]) return;
@@ -1290,30 +1334,43 @@ export class ExpeditionMapScene extends Phaser.Scene {
       y += 34;
     });
 
-    // Elevation legend
-    y += 14;
-    this.elevLegend = this.add.container(0, 0).setDepth(31);
-    const legendTitle = this.add.text(px, y, 'ELEVATION (km, MOLA)', {
-      fontFamily: 'Share Tech Mono, monospace', fontSize: '10px', color: '#64748b'
-    }).setOrigin(0.5);
+    // Legends: terrain classes (flat layer) / elevation gradient (other layers)
+    y += 12;
+    this.classLegend = this.add.container(0, 0).setDepth(31);
+    this.gradLegend = this.add.container(0, 0).setDepth(31);
+    const titleStyle = { fontFamily: 'Share Tech Mono, monospace', fontSize: '10px', color: '#64748b' };
+    const tickStyle = { fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', color: '#94a3b8' };
+
+    const cg = this.add.graphics();
+    this.classLegend.add([this.add.text(px, y, 'TERRAIN CLASSES', titleStyle).setOrigin(0.5), cg]);
+    const rows: Array<{ rgb: [number, number, number]; name: string }> = [
+      ...BANDS.slice().reverse().map(bd => ({ rgb: bd.rgb, name: bd.name })),
+      { rgb: ICE_RGB, name: 'POLAR ICE' }
+    ];
+    rows.forEach((row, i) => {
+      const ry = y + 20 + i * 12;
+      cg.fillStyle((row.rgb[0] << 16) | (row.rgb[1] << 8) | row.rgb[2], 1).fillRect(px - 88, ry - 4, 14, 8);
+      cg.lineStyle(1, 0x38bdf8, 0.4).strokeRect(px - 88, ry - 4, 14, 8);
+      this.classLegend.add(this.add.text(px - 68, ry, row.name, { ...tickStyle, fontSize: '9px' }).setOrigin(0, 0.5));
+    });
+
     const bar = this.add.graphics();
     const barX = px - 90;
     const barW = 180;
     for (let i = 0; i < barW; i++) {
       const km = -8 + (29 * i) / (barW - 1);
-      bar.fillStyle(molaColorHex(km), 1).fillRect(barX + i, y + 14, 1, 10);
+      bar.fillStyle(molaColorHex(km), 1).fillRect(barX + i, y + 18, 1, 10);
     }
-    bar.lineStyle(1, 0x38bdf8, 0.5).strokeRect(barX, y + 14, barW, 10);
-    const tickStyle = { fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', color: '#94a3b8' };
+    bar.lineStyle(1, 0x38bdf8, 0.5).strokeRect(barX, y + 18, barW, 10);
     const zeroX = barX + (8 / 29) * barW;
-    this.elevLegend.add([
-      legendTitle,
+    this.gradLegend.add([
+      this.add.text(px, y, 'ELEVATION (km, MOLA)', titleStyle).setOrigin(0.5),
       bar,
-      this.add.text(barX, y + 27, '-8', tickStyle).setOrigin(0.5, 0),
-      this.add.text(zeroX, y + 27, '0', tickStyle).setOrigin(0.5, 0),
-      this.add.text(barX + barW, y + 27, '+21', tickStyle).setOrigin(0.5, 0)
+      this.add.text(barX, y + 31, '-8', tickStyle).setOrigin(0.5, 0),
+      this.add.text(zeroX, y + 31, '0', tickStyle).setOrigin(0.5, 0),
+      this.add.text(barX + barW, y + 31, '+21', tickStyle).setOrigin(0.5, 0)
     ]);
-    y += 56;
+    y += 158;
 
     // Symbol key
     this.add.text(px, y, 'KEY', {

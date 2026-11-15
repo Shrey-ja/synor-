@@ -9,6 +9,7 @@
 import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
 import { audioManager } from '../state/AudioManager';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export class CutsceneScene extends Phaser.Scene {
   private videoElement: HTMLVideoElement | null = null;
@@ -195,6 +196,26 @@ export class CutsceneScene extends Phaser.Scene {
     });
 
     skipBtnBg.on('pointerdown', () => this.finishCutscene());
+
+    attachUIInteraction(this, skipBtnBg, {
+      colorTarget: skipBtnBg,
+      textTarget: skipBtnText,
+      hoverFill: 0x38bdf8,
+      hoverFillAlpha: 0.3,
+      defaultFill: 0x0a1424,
+      defaultFillAlpha: 0.9,
+      hoverStroke: 0x38bdf8,
+      hoverStrokeWidth: 1.5,
+      defaultStroke: 0x38bdf8,
+      defaultStrokeWidth: 1,
+      soundType: 'confirm',
+      hoverScale: 1.03,
+      pressScale: 0.97,
+      tooltip: 'Skip the cinematic prelude and enter Gale Crater Base.',
+      tooltipOffsetX: 24,
+      tooltipOffsetY: -38,
+      tooltipDepth: 9000,
+    });
   }
 
   private typeNextLog(textObj: Phaser.GameObjects.Text) {

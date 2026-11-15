@@ -14,6 +14,7 @@ import { DecisionModal } from '../ui/DecisionModal';
 import { attachBlenderSceneSlot } from '../utils/BlenderSceneBridge';
 import { soundFx } from '../utils/ProceduralAudio';
 import { audioManager } from '../state/AudioManager';
+import { transitionToScene, fadeSceneIn } from '../utils/SceneTransition';
 
 interface ConjunctionChoice {
   text: string;
@@ -49,7 +50,10 @@ export class JezeroShelterScene extends Phaser.Scene {
   }
 
   create() {
+    gameState.currentLocation = 'jezero_shelter';
+    gameState.save();
     audioManager.playMusic(this, 'music_game', { loop: true });
+    fadeSceneIn(this);
 
     // Load conjunction data from cache
     const cachedData = this.cache.json.get('conjunction_data');
@@ -66,11 +70,94 @@ export class JezeroShelterScene extends Phaser.Scene {
     this.createPowerBreakerPanel();
     this.createWaterShieldingVisualizer();
     this.createCryoSampleVault();
+    this.createStructuralSystems();
+    this.createShelterStations();
     this.createDayProgressionHUD();
 
     // Check if initial conjunction day event needs to be triggered
     this.time.delayedCall(1200, () => {
       this.promptCurrentDayEvent();
+    });
+  }
+
+  private createStructuralSystems() {
+    const panel = this.add.container(1680, 300);
+    const bg = this.add.rectangle(0, 0, 390, 230, 0x070e1c, 0.95)
+      .setStrokeStyle(2, 0x38bdf8);
+    const title = this.add.text(0, -95, 'OUTPOST STRUCTURE STATUS', {
+      fontFamily: 'Orbitron, sans-serif',
+      fontSize: '12px',
+      color: '#38bdf8'
+    }).setOrigin(0.5);
+    panel.add([bg, title]);
+
+    const components: { key: keyof typeof gameState.shelterUpgrades; label: string; y: number }[] = [
+      { key: 'dome', label: 'DOME PRESSURE SHELL', y: -55 },
+      { key: 'rimshade', label: 'RIMSHADE THERMAL BAFFLE', y: -20 },
+      { key: 'cap', label: 'HABITAT CAP SEAL', y: 15 },
+      { key: 'radiationUmbrella', label: 'RADIATION UMBRELLA', y: 50 }
+    ];
+    components.forEach(component => {
+      const state = gameState.shelterUpgrades[component.key];
+      const row = this.add.rectangle(0, component.y, 330, 26, state ? 0x064e3b : 0x1e293b, 0.9)
+        .setStrokeStyle(1, state ? 0x34d399 : 0x475569)
+        .setInteractive({ useHandCursor: true });
+      const text = this.add.text(0, component.y, `${component.label} // ${state ? 'ONLINE' : 'COMMISSION'}`, {
+        fontFamily: 'Share Tech Mono, monospace',
+        fontSize: '10px',
+        color: state ? '#34d399' : '#cbd5e1'
+      }).setOrigin(0.5);
+      row.on('pointerdown', () => {
+        gameState.shelterUpgrades[component.key] = true;
+        gameState.resources.shelterProtection = Math.min(100, gameState.resources.shelterProtection + 5);
+        gameState.save();
+        row.setFillStyle(0x064e3b, 0.9);
+        row.setStrokeStyle(1, 0x34d399);
+        text.setText(`${component.label} // ONLINE`);
+        text.setColor('#34d399');
+      });
+      panel.add([row, text]);
+    });
+  }
+
+  private createShelterStations() {
+    const panel = this.add.container(1680, 690);
+    const bg = this.add.rectangle(0, 0, 390, 250, 0x070e1c, 0.95)
+      .setStrokeStyle(2, 0x0284c7);
+    const title = this.add.text(0, -105, 'SHELTER SERVICE STATIONS', {
+      fontFamily: 'Orbitron, sans-serif',
+      fontSize: '12px',
+      color: '#38bdf8'
+    }).setOrigin(0.5);
+    panel.add([bg, title]);
+
+    const addStation = (label: string, y: number, action: () => void) => {
+      const station = this.add.rectangle(0, y, 320, 38, 0x0f172a, 0.95)
+        .setStrokeStyle(1, 0x38bdf8)
+        .setInteractive({ useHandCursor: true });
+      const text = this.add.text(0, y, label, {
+        fontFamily: 'Share Tech Mono, monospace',
+        fontSize: '10px',
+        color: '#cbd5e1'
+      }).setOrigin(0.5);
+      station.on('pointerdown', action);
+      panel.add([station, text]);
+    };
+
+    addStation('RECHARGE SUIT // O2 + POWER', -60, () => {
+      gameState.suitO2 = 100;
+      gameState.suitBattery = 100;
+      gameState.resources.power = Math.max(0, gameState.resources.power - 3);
+      gameState.addLog('SHELTER STATION: EVA suit O2 and battery recharged.', 'system');
+      gameState.notifyChange('suit_recharged');
+    });
+    addStation('ANALYZE JEZERO CORE SAMPLES', 0, () => {
+      gameState.addLog(`CORE LAB: ${gameState.regolithSamples} Jezero regolith samples available for analysis.`, 'science');
+      gameState.notifyChange('core_analysis');
+    });
+    addStation('REVIEW SHELTER TELEMETRY', 60, () => {
+      gameState.addLog(`SHELTER TELEMETRY: ${Math.round(gameState.resources.shelterProtection)}% protection, ${Math.round(gameState.resources.waterReserve)}% water reserve.`, 'system');
+      gameState.notifyChange('shelter_review');
     });
   }
 
@@ -345,7 +432,7 @@ export class JezeroShelterScene extends Phaser.Scene {
       gameState.dsnLocked = true;
       gameState.currentChapter = 'ending';
       gameState.save();
-      this.scene.start('EndingScene');
+      transitionToScene(this, 'EndingScene');
     }
   }
 
@@ -392,7 +479,7 @@ export class JezeroShelterScene extends Phaser.Scene {
       gameState.addLog(`EVA EXECUTED: Performed exterior mission in dust storm.`, 'warning');
     }
     if (choice.endingTrigger) {
-      this.scene.start('EndingScene');
+      transitionToScene(this, 'EndingScene');
     }
     this.updateBreakersUI();
   }

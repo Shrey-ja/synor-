@@ -6,6 +6,8 @@
 import Phaser from 'phaser';
 import { audioManager } from '../state/AudioManager';
 import { soundFx } from '../utils/ProceduralAudio';
+import { uiSfx } from '../utils/UISoundFX';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export class AudioSettingsModal extends Phaser.GameObjects.Container {
   private panelBg!: Phaser.GameObjects.Rectangle;
@@ -89,6 +91,27 @@ export class AudioSettingsModal extends Phaser.GameObjects.Container {
     backBtn.on('pointerdown', () => {
       audioManager.playSfx(this.scene, 'sfx_ui_click', { volume: 0.7 });
       this.close();
+    });
+
+    // Enhanced interaction (additive) — cancel sound + tooltip
+    attachUIInteraction(this.scene, backBtn, {
+      colorTarget:      backBtn,
+      hoverFill:        0x38bdf8,
+      hoverFillAlpha:   0.3,
+      defaultFill:      0x1e293b,
+      defaultFillAlpha: 0.9,
+      hoverStroke:      0x38bdf8,
+      hoverStrokeWidth: 1.5,
+      defaultStroke:    0x38bdf8,
+      defaultStrokeWidth: 1,
+      defaultStrokeAlpha: 0.9,
+      soundType:        'cancel',
+      hoverScale:       1.04,
+      pressScale:       0.96,
+      tooltip:          'Return to system without saving. Settings are auto-applied.',
+      tooltipOffsetX:   24,
+      tooltipOffsetY:   -38,
+      tooltipDepth:     8100,
     });
 
     this.add([backBtn, backText]);

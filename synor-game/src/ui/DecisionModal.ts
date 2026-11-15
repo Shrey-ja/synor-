@@ -7,6 +7,8 @@
 import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
 import { audioManager } from '../state/AudioManager';
+import { uiSfx } from '../utils/UISoundFX';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export interface DecisionChoice {
   text: string;
@@ -158,6 +160,49 @@ export class DecisionModal extends Phaser.GameObjects.Container {
       cardBg.on('pointerout', () => {
         cardBg.setStrokeStyle(1, 0x475569);
         cardBg.setFillStyle(0x0f172a, 0.9);
+      });
+
+      // Build a compact tooltip showing choice consequences
+      const tipLines: string[] = [choice.detail];
+      if (choice.consequences && choice.consequences.length > 0) {
+        tipLines.push('=> ' + choice.consequences.join('  |  '));
+      }
+      const tipText = tipLines.join('  //  ');
+
+      // Enhanced interaction for card background (additive)
+      attachUIInteraction(this.scene, cardBg, {
+        colorTarget:      cardBg,
+        hoverFill:        0x1e293b,
+        hoverFillAlpha:   0.95,
+        hoverStroke:      0x38bdf8,
+        hoverStrokeWidth: 2,
+        defaultFill:      0x0f172a,
+        defaultFillAlpha: 0.9,
+        defaultStroke:    0x475569,
+        defaultStrokeWidth: 1,
+        soundType:        'telemetry',
+        hoverScale:       1.025,
+        pressScale:       0.975,
+        tooltip:          tipText,
+        tooltipOffsetX:   24,
+        tooltipOffsetY:   -40,
+        tooltipDepth:     8200,
+      });
+
+      // Enhanced interaction for CONFIRM button (additive)
+      attachUIInteraction(this.scene, btn, {
+        colorTarget:      btn,
+        hoverFill:        0x38bdf8,
+        hoverFillAlpha:   0.3,
+        defaultFill:      0x1e293b,
+        defaultFillAlpha: 1,
+        hoverStroke:      0x38bdf8,
+        hoverStrokeWidth: 1.5,
+        defaultStroke:    0x38bdf8,
+        defaultStrokeWidth: 1,
+        soundType:        'confirm',
+        hoverScale:       1.04,
+        pressScale:       0.96,
       });
 
       this.add([cardBg, choiceTitle, choiceDetail, metricText, btn, btnText]);

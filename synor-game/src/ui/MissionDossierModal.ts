@@ -7,6 +7,8 @@
 import Phaser from 'phaser';
 import { soundFx } from '../utils/ProceduralAudio';
 import { audioManager } from '../state/AudioManager';
+import { uiSfx } from '../utils/UISoundFX';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export class MissionDossierModal extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene) {
@@ -94,6 +96,27 @@ export class MissionDossierModal extends Phaser.GameObjects.Container {
 
     btnClose.on('pointerdown', doClose);
     this.scene.input.keyboard?.once('keydown-ESC', doClose);
+
+    // Enhanced interaction (additive)
+    attachUIInteraction(this.scene, btnClose, {
+      colorTarget:      btnClose,
+      hoverFill:        0x38bdf8,
+      hoverFillAlpha:   0.28,
+      defaultFill:      0x0e1726,
+      defaultFillAlpha: 0.9,
+      hoverStroke:      0x38bdf8,
+      hoverStrokeWidth: 1.5,
+      defaultStroke:    0x38bdf8,
+      defaultStrokeWidth: 1,
+      defaultStrokeAlpha: 0.8,
+      soundType:        'cancel',
+      hoverScale:       1.03,
+      pressScale:       0.97,
+      tooltip:          'Close dossier and return to mission start menu.',
+      tooltipOffsetX:   24,
+      tooltipOffsetY:   -38,
+      tooltipDepth:     8100,
+    });
 
     this.add([btnClose, btnCloseText]);
   }

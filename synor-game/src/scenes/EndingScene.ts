@@ -9,6 +9,7 @@ import Phaser from 'phaser';
 import { gameState } from '../state/GameState';
 import { attachBlenderSceneSlot } from '../utils/BlenderSceneBridge';
 import { soundFx } from '../utils/ProceduralAudio';
+import { attachUIInteraction } from '../utils/UIInteraction';
 
 export class EndingScene extends Phaser.Scene {
   constructor() {
@@ -127,6 +128,23 @@ export class EndingScene extends Phaser.Scene {
       gameState.resetToPrologue();
       this.scene.stop('HUDScene');
       this.scene.start('StartMenuScene');
+    });
+
+    attachUIInteraction(this, restartBtn, {
+      colorTarget: restartBtn,
+      hoverFill: 0x0369a1,
+      defaultFill: 0x0284c7,
+      hoverStroke: 0xffffff,
+      hoverStrokeWidth: 1.5,
+      defaultStroke: 0xffffff,
+      defaultStrokeWidth: 1,
+      soundType: 'confirm',
+      hoverScale: 1.03,
+      pressScale: 0.97,
+      tooltip: () => `Restart expedition. Final radiation dose: ${gameState.hazards.radiationDoseMsv.toFixed(1)} mSv; CO2: ${Math.round(gameState.hazards.co2Ppm)} ppm.`,
+      tooltipOffsetX: 24,
+      tooltipOffsetY: -38,
+      tooltipDepth: 9000,
     });
 
     card.add([bg, banner, tText, narrativeBox, statsBox, statsText, restartBtn, btnTxt]);

@@ -237,69 +237,63 @@ export class GaleBaseScene extends Phaser.Scene {
   private createOutpostStructures() {
     // 1. Biosphere Greenhouse Dome (West Sector)
     // Visual position: (750, 850), scale 0.7 (458 x 465)
-    // Foundation base is at y: 850 + 110 = 960
+    // Base foundation touches ground at y ~ 1040. Depth set to ground contact.
     const dome = this.add.image(750, 850, 'outpost_dome').setScale(0.7);
-    dome.setDepth(960);
-    // Solid collider covering the dome base footprint (CANNOT walk through dome!)
-    this.addStaticObstacle(750, 930, 380, 180);
+    dome.setDepth(1060);
+    // Complete solid physical collider covering entire dome footprint (cannot walk into or over dome)
+    this.addStaticObstacle(750, 880, 430, 300);
 
     // 2. Ares Rocket Lander on Landing Platform (East Sector)
     // Visual position: (2450, 1300), scale 0.8 (386 x 400)
-    // Foundation base is at y: 1300 + 110 = 1410
     const rocket = this.add.image(2450, 1300, 'outpost_rocket').setScale(0.8);
-    rocket.setDepth(1410);
+    rocket.setDepth(1480);
     // Solid platform collider
-    this.addStaticObstacle(2450, 1370, 320, 170);
+    this.addStaticObstacle(2450, 1360, 350, 240);
 
     // 3. Central Habitat Station (Central Sector)
     // Visual position: (1600, 1000), scale 0.7 (370 x 465)
-    // Foundation base is at y: 1000 + 110 = 1110
     const hab = this.add.image(1600, 1000, 'outpost_hab').setScale(0.7);
-    hab.setDepth(1110);
-    this.addStaticObstacle(1600, 1070, 320, 160);
+    hab.setDepth(1220);
+    this.addStaticObstacle(1600, 1040, 370, 270);
 
     // 4. Expedition Rover Hangar & Garage (Central-West Sector)
     // Visual position: (1100, 1000), scale 0.65 (445 x 431)
-    // Foundation base is at y: 1000 + 110 = 1110
     const hangar = this.add.image(1100, 1000, 'outpost_hangar').setScale(0.65);
-    hangar.setDepth(1110);
-    this.addStaticObstacle(1100, 1070, 350, 160);
+    hangar.setDepth(1200);
+    this.addStaticObstacle(1100, 1040, 420, 270);
 
     // 5. Subsurface Science Module & Drill Rig (South Sector)
     // Visual position: (1550, 1650), scale 0.65 (426 x 431)
-    // Foundation base is at y: 1650 + 110 = 1760
     const science = this.add.image(1550, 1650, 'outpost_science').setScale(0.65);
-    science.setDepth(1760);
-    this.addStaticObstacle(1550, 1720, 330, 160);
+    science.setDepth(1850);
+    this.addStaticObstacle(1550, 1690, 400, 270);
 
     // 6. Photovoltaic Solar Array (North-West Sector)
     // Visual position: (650, 380), scale 0.9 (264 x 220)
-    // Foundation base is at y: 380 + 50 = 430
     const solar = this.add.image(650, 380, 'outpost_solar').setScale(0.9);
-    solar.setDepth(430);
-    this.addStaticObstacle(650, 420, 240, 120);
+    solar.setDepth(490);
+    this.addStaticObstacle(650, 400, 270, 170);
 
     // Power Box beside solar panels
     const powerBox = this.add.image(500, 420, 'outpost_powerbox').setScale(0.5);
-    powerBox.setDepth(430);
+    powerBox.setDepth(490);
     this.addStaticObstacle(500, 420, 70, 60);
 
     // 7. High-Gain Earth Relay Parabolic Dish (North-East Sector)
     // Visual position: (2150, 380), scale 0.75 (227 x 361)
-    // Foundation base is at y: 380 + 110 = 490
     const relay = this.add.image(2150, 380, 'outpost_dish').setScale(0.75);
-    relay.setDepth(490);
-    this.addStaticObstacle(2150, 460, 160, 110);
+    relay.setDepth(560);
+    this.addStaticObstacle(2150, 440, 210, 190);
 
     // 8. Observation & Weather Tower (East Horizon Ridge)
     const tower = this.add.image(2600, 400, 'outpost_tower').setScale(0.65);
-    tower.setDepth(540);
-    this.addStaticObstacle(2600, 500, 180, 120);
+    tower.setDepth(615);
+    this.addStaticObstacle(2600, 470, 210, 210);
 
     // 9. Medical Bay Facility (Central-East Sector)
     const medBay = this.add.image(2050, 980, 'outpost_medbay').setScale(0.75);
-    medBay.setDepth(1050);
-    this.addStaticObstacle(2050, 1020, 260, 130);
+    medBay.setDepth(1110);
+    this.addStaticObstacle(2050, 1010, 290, 190);
 
     // 10. Vehicles & Ground Equipment
     // Rover vehicle near hangar

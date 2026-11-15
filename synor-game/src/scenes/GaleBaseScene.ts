@@ -186,6 +186,8 @@ export class GaleBaseScene extends Phaser.Scene {
     const worldH = 2000;
 
     // 1. World & Camera Physics Setup
+    this.input.enabled = true;
+    if (this.input.keyboard) this.input.keyboard.enabled = true;
     this.physics.world.setBounds(0, 0, worldW, worldH);
     this.cameras.main.setBounds(0, 0, worldW, worldH);
 
@@ -405,13 +407,11 @@ export class GaleBaseScene extends Phaser.Scene {
     if (this.actionDialogContainer) return;
 
     if (this.activeMapModal) {
-      audioManager.playSfx(this, 'sfx_ui_modal_close', { volume: 0.65 });
       this.activeMapModal.close();
       this.activeMapModal = null;
       return;
     }
 
-    audioManager.playSfx(this, 'sfx_ui_modal_open', { volume: 0.75 });
     this.astronaut.setVelocity(0, 0);
 
     this.activeMapModal = new MarsMapModal(

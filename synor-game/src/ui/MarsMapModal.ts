@@ -26,6 +26,7 @@ export interface FastTravelPoint {
 export class MarsMapModal extends Phaser.GameObjects.Container {
   private onCloseCallback: () => void;
   private onTeleportCallback: (x: number, y: number, locName: string) => void;
+  private isClosing = false;
 
   private waypoints: FastTravelPoint[] = [
     {
@@ -131,13 +132,15 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
     this.onTeleportCallback = onTeleport;
     this.onCloseCallback = onClose;
 
+    // Fix screen-space positioning & depth above all world entities
+    this.setScrollFactor(0);
+    this.setDepth(6000);
+
     audioManager.playSfx(scene, 'sfx_ui_modal_open', { volume: 0.75 });
     this.createMapUI();
     scene.add.existing(this);
-    this.setDepth(500);
 
-    // Listen for close keys (M or ESC)
-    scene.input.keyboard?.once('keydown-M', () => this.close());
+    // Listen for ESC close key
     scene.input.keyboard?.once('keydown-ESC', () => this.close());
   }
 
@@ -322,6 +325,9 @@ export class MarsMapModal extends Phaser.GameObjects.Container {
   }
 
   public close() {
+    if (this.isClosing) return;
+    this.isClosing = true;
+
     audioManager.playSfx(this.scene, 'sfx_ui_modal_close', { volume: 0.65 });
     this.onCloseCallback();
     this.destroy();
